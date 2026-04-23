@@ -1,9 +1,3 @@
-SELECT_USER_BY_ID = """
-SELECT id, full_name, email, password_hash, role, created_at, updated_at
-FROM users
-WHERE id = $1
-"""
-
 SELECT_USER_BY_EMAIL = """
 SELECT id, full_name, email, password_hash, role, created_at, updated_at
 FROM users

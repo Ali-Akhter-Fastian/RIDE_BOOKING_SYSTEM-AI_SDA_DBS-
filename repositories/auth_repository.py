@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from uuid import UUID
-
 import asyncpg
 
-from db.queries.auth_queries import INSERT_USER, SELECT_USER_BY_EMAIL, SELECT_USER_BY_ID
+from db.queries.auth_queries import INSERT_USER, SELECT_USER_BY_EMAIL
 from exception.auth_exceptions import AuthDatabaseSchemaError, AuthRepositoryError, UserExists
 from models.user import User
 
@@ -12,17 +10,6 @@ from models.user import User
 class AuthRepository:
     def __init__(self, connection: asyncpg.Connection):
         self.connection = connection
-
-    async def get_by_id(self, user_id: UUID) -> User | None:
-        try:
-            record = await self.connection.fetchrow(SELECT_USER_BY_ID, user_id)
-        except asyncpg.UndefinedTableError as exc:
-            raise AuthDatabaseSchemaError("Users table is missing. Run DB migrations first.") from exc
-        except asyncpg.PostgresError as exc:
-            raise AuthRepositoryError("Failed to read user from database") from exc
-        if record is None:
-            return None
-        return User.from_record(record)
 
     async def get_by_email(self, email: str) -> User | None:
         try:
