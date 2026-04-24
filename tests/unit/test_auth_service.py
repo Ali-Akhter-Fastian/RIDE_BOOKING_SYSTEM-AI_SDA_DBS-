@@ -44,7 +44,7 @@ def settings() -> Settings:
         database_url="postgresql://localhost/test",
         jwt_secret="test-secret",
         jwt_algorithm="HS256",
-        access_token_expire_minutes=30,
+        access_token_expire_minutes=60,
     )
 
 
