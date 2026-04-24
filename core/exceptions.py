@@ -5,7 +5,6 @@ from exception.auth_exceptions import (
 	AuthError,
 	AuthRepositoryError,
 	InvalidCredentials,
-	InvalidOtp,
 	TokenError,
 	UserExists,
 )
@@ -15,7 +14,6 @@ __all__ = [
 	"AuthRepositoryError",
 	"AuthDatabaseSchemaError",
 	"InvalidCredentials",
-	"InvalidOtp",
 	"TokenError",
 	"UserExists",
 ]

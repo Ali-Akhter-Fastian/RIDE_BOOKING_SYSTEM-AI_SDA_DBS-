@@ -20,10 +20,6 @@ class TokenError(AuthError):
     pass
 
 
-class InvalidOtp(AuthError):
-    pass
-
-
 class AuthRepositoryError(AuthError):
     pass
 
@@ -37,8 +33,6 @@ def raise_auth_http_exception(exc: Exception) -> None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     if isinstance(exc, InvalidCredentials):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
-    if isinstance(exc, InvalidOtp):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     if isinstance(exc, TokenError):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
     if isinstance(exc, AuthDatabaseSchemaError):

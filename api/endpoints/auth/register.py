@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
 
-from schemas.auth import RegisterRequest, UserResponse
+from schemas.auth.register import RegisterRequest, UserResponse
 
 from .dependencies import get_register_auth_service
 from services.auth import RegisterAuthService

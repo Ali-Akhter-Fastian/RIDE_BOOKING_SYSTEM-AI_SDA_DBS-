@@ -7,7 +7,7 @@ from core.security import hash_password
 from exception.auth_exceptions import UserExists
 from models.user import User
 from repositories.auth_repository import AuthRepository
-from schemas.auth import RegisterRequest
+from schemas.auth.register import RegisterRequest
 
 from .base import AuthServiceBase
 

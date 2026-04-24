@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Annotated
 from uuid import UUID
+from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 from core.enums import UserRole
 

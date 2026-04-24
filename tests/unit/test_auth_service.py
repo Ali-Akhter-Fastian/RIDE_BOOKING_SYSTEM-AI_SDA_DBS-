@@ -11,7 +11,7 @@ from app.config import Settings
 from core.enums import UserRole
 from exception.auth_exceptions import UserExists
 from models.user import User
-from schemas.auth import RegisterRequest
+from schemas.auth.register import RegisterRequest
 from services.auth import RegisterAuthService
 
 
