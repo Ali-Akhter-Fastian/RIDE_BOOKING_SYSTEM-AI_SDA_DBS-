@@ -7,7 +7,7 @@ from app.dependencies import get_db
 from repositories.auth_repository import AuthRepository
 from services.auth import RegisterAuthService
 
-
+# It creates and returns a fully configured RegisterAuthService class object
 def get_register_auth_service(
     connection=Depends(get_db),
     settings: Settings = Depends(get_settings),
