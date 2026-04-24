@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
+from pydantic import ValidationError
 
 from app.config import Settings
 from core.enums import UserRole
@@ -56,7 +57,12 @@ def repository() -> FakeAuthRepository:
 @pytest.mark.asyncio()
 async def test_register_user_hashes_password(repository: FakeAuthRepository, settings: Settings) -> None:
     service = RegisterAuthService(repository, settings)
-    payload = RegisterRequest(full_name="Test Rider", email="rider@example.com", password="password123")
+    payload = RegisterRequest(
+        full_name="Test Rider",
+        email="rider@example.com",
+        password="password123",
+        confirm_password="password123",
+    )
 
     user = await service.register_user(payload)
 
@@ -79,7 +85,22 @@ async def test_register_user_rejects_duplicates(repository: FakeAuthRepository, 
     )
     repository.user_by_email[existing.email] = existing
 
-    payload = RegisterRequest(full_name="Existing User", email=existing.email, password="password123")
+    payload = RegisterRequest(
+        full_name="Existing User",
+        email=existing.email,
+        password="password123",
+        confirm_password="password123",
+    )
 
     with pytest.raises(UserExists):
         await service.register_user(payload)
+
+
+def test_register_request_rejects_password_mismatch() -> None:
+    with pytest.raises(ValidationError):
+        RegisterRequest(
+            full_name="Mismatch User",
+            email="mismatch@example.com",
+            password="password123",
+            confirm_password="different123",
+        )
