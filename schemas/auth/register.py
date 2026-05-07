@@ -12,7 +12,7 @@ from core.enums import UserRole
 class RegisterRequest(BaseModel):
     first_name: str | None = Field(default=None, min_length=1, max_length=60)
     last_name: str | None = Field(default=None, max_length=60)
-    full_name: str | None = Field(default=None, min_length=2, max_length=120)
+    full_name: str | None = Field(default=None, min_length=1, max_length=120)
     email: EmailStr
     password: Annotated[str, Field(min_length=6, max_length=128)]
     confirm_password: Annotated[str, Field(min_length=6, max_length=128)]
