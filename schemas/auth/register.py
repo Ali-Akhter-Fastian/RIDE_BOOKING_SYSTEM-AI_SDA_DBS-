@@ -20,13 +20,13 @@ class RegisterRequest(BaseModel):
     @field_validator('password')
     def password_min_length(cls, v: str):
         if len(v or "") < 6:
-            raise ValueError("Password must be at least 8 characters")
+            raise ValueError("Password must be at least 6 characters")
         return v
 
     @field_validator('confirm_password')
     def confirm_password_min_length(cls, v: str):
         if len(v or "") < 6:
-            raise ValueError("Confirm password must be at least 8 characters")
+            raise ValueError("Confirm password must be at least 6 characters")
         return v
     role: UserRole = UserRole.rider
 
