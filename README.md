@@ -95,5 +95,4 @@ alembic upgrade head
 ## Notes
 
 - The `.env.example` file contains the expected environment variables.
-- Do not commit `.env` to version control.
 - Ensure PostgreSQL is running and accessible before starting the API.
