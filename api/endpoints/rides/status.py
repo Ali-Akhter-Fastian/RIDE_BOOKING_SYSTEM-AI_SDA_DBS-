@@ -1,0 +1,64 @@
+from __future__ import annotations
+
+from uuid import UUID
+
+from fastapi import APIRouter, Depends
+
+from exception.ride_exceptions import raise_ride_http_exception
+from schemas.rides.status import RideStatusResponse
+from services.rides import RideLifecycleService
+
+from .dependencies import get_current_driver_id, get_ride_lifecycle_service
+
+router = APIRouter()
+
+
+@router.patch(
+    "/{ride_id}/accept",
+    response_model=RideStatusResponse,
+    summary="Driver accepts a requested ride",
+)
+async def accept_ride(
+    ride_id: UUID,
+    driver_id: UUID = Depends(get_current_driver_id),
+    service: RideLifecycleService = Depends(get_ride_lifecycle_service),
+) -> RideStatusResponse:
+    try:
+        ride = await service.accept_ride(ride_id, driver_id)
+        return RideStatusResponse.model_validate(ride)
+    except Exception as exc:
+        raise_ride_http_exception(exc)
+
+
+@router.patch(
+    "/{ride_id}/start",
+    response_model=RideStatusResponse,
+    summary="Driver marks ride as in progress (passenger picked up)",
+)
+async def start_ride(
+    ride_id: UUID,
+    driver_id: UUID = Depends(get_current_driver_id),
+    service: RideLifecycleService = Depends(get_ride_lifecycle_service),
+) -> RideStatusResponse:
+    try:
+        ride = await service.start_ride(ride_id, driver_id)
+        return RideStatusResponse.model_validate(ride)
+    except Exception as exc:
+        raise_ride_http_exception(exc)
+
+
+@router.patch(
+    "/{ride_id}/complete",
+    response_model=RideStatusResponse,
+    summary="Driver marks ride as completed (passenger dropped off)",
+)
+async def complete_ride(
+    ride_id: UUID,
+    driver_id: UUID = Depends(get_current_driver_id),
+    service: RideLifecycleService = Depends(get_ride_lifecycle_service),
+) -> RideStatusResponse:
+    try:
+        ride = await service.complete_ride(ride_id, driver_id)
+        return RideStatusResponse.model_validate(ride)
+    except Exception as exc:
+        raise_ride_http_exception(exc)
