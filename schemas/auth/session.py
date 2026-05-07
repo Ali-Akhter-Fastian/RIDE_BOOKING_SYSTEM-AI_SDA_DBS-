@@ -7,7 +7,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: Annotated[str, Field(min_length=8, max_length=128)]
+    password: Annotated[str, Field(min_length=6, max_length=128)]
 
 
 class TokenPairResponse(BaseModel):
