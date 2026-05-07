@@ -5,7 +5,6 @@ A FastAPI-based rides service for booking, querying, and managing ride reservati
 ## Overview
 
 This repository contains the backend API for a ride booking platform. It uses:
-
 - FastAPI for HTTP routing and request handling
 - asyncpg for PostgreSQL database access
 - Alembic for database migrations
