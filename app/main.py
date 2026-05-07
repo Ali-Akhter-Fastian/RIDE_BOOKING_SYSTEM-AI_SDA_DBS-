@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from api.router import api_router
@@ -33,6 +34,13 @@ async def lifespan(app: FastAPI): # It handles both startup + cleanup in one pla
 
 
 app = FastAPI(title="Ride Booking Backend", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Routing:
 # When a request comes in → FastAPI checks the path → finds the matching route → runs the corresponding function.
 app.include_router(api_router, prefix=API_PREFIX)
