@@ -26,6 +26,12 @@ class FakeAuthRepository:
     async def get_by_email(self, email: str) -> User | None:
         return self.user_by_email.get(email.lower())
 
+    async def get_by_id(self, user_id: UUID) -> User | None:
+        return next(
+            (user for user in self.user_by_email.values() if user.id == user_id),
+            None,
+        )
+
 
 @pytest.fixture()
 def settings() -> Settings:

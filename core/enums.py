@@ -14,3 +14,13 @@ class RideStatus(str, Enum):
     in_progress = "in_progress"
     completed = "completed"
     cancelled = "cancelled"
+
+
+class PaymentStatus(str, Enum):
+    pending = "pending"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
+    refunded = "refunded"
+    partially_refunded = "partially_refunded"
+    cancelled = "cancelled"
