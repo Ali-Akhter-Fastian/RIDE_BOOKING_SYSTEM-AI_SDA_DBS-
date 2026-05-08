@@ -1,4 +1,5 @@
 from __future__ import annotations
+from uuid import UUID
 
 from core.security import (
     create_access_token,
@@ -37,7 +38,7 @@ class SessionAuthService(AuthServiceBase):
         if not isinstance(subject, str) or not subject:
             raise TokenError("Invalid token subject")
 
-        user = await self.repository.get_by_email(subject)
+        user = await self.repository.get_by_id(UUID(subject)) 
         if user is None:
             raise InvalidCredentials("User not found")
 
@@ -53,7 +54,7 @@ class SessionAuthService(AuthServiceBase):
         if not isinstance(subject, str) or not subject:
             raise TokenError("Invalid token subject")
 
-        user = await self.repository.get_by_email(subject)
+        user = await self.repository.get_by_id(UUID(subject)) 
         if user is None:
             raise InvalidCredentials("User not found")
         return user
@@ -68,7 +69,7 @@ class SessionAuthService(AuthServiceBase):
 
     def _build_token_pair(self, user: User) -> TokenPairResponse:
         token_payload = {
-            "sub": user.email,
+            "sub": str(user.id), # this error takes plenty of time, the old line is: user.email
             "role": user.role.value,
         }
         access_token = create_access_token(

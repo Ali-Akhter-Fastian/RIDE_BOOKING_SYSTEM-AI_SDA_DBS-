@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/",
+    "/create",
     response_model=CreateRideResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Request a new ride",

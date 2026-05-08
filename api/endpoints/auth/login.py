@@ -20,3 +20,6 @@ async def login_user(
         return await service.login_user(payload)
     except Exception as exc:
         raise_auth_http_exception(exc)
+
+
+

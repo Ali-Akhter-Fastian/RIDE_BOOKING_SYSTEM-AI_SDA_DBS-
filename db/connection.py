@@ -20,3 +20,15 @@ async def create_pool(
 async def close_pool(pool: asyncpg.Pool | None) -> None:
     if pool is not None:
         await pool.close()
+
+# Important concept
+
+# Without pooling:
+
+# Request -> Create connection -> Query -> Destroy connection
+
+# With pooling:
+
+# Request -> Reuse existing connection -> Query -> Return connection
+
+# That reuse is the main idea behind a database pool.

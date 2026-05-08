@@ -17,6 +17,8 @@ from db.queries.ride_queries import (
     SELECT_RIDES_BY_RIDER_PAGINATED,
     START_RIDE,
     UPDATE_DRIVER_RATING,
+    ARCHIVE_RIDE,
+    DELETE_RIDE_BY_ID,
 )
 from exception.ride_exceptions import (
     RideAlreadyCancelled,
@@ -199,3 +201,22 @@ class RideRepository:
         if record is None:
             return None
         return Ride.from_record(record)
+
+    async def archive_and_delete(self, ride_id: UUID) -> None:
+        """Archive a ride into `ride_history` and remove it from `rides`.
+
+        Runs both operations inside a DB transaction to avoid data loss.
+        """
+        try:
+            async with self.connection.transaction():
+                archived = await self.connection.fetchrow(ARCHIVE_RIDE, ride_id)
+                if archived is None:
+                    # nothing to archive — treat as no-op
+                    return
+                await self.connection.execute(DELETE_RIDE_BY_ID, ride_id)
+        except asyncpg.UndefinedTableError as exc:
+            raise RideDatabaseSchemaError(
+                "Rides or ride_history table is missing. Run DB migrations first."
+            ) from exc
+        except asyncpg.PostgresError as exc:
+            raise RideRepositoryError("Failed to archive and delete ride") from exc

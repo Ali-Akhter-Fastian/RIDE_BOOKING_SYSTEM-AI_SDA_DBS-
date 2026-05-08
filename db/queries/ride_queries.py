@@ -106,3 +106,17 @@ WHERE id = $1
   AND rating IS NULL
 RETURNING {RETURNING_FIELDS}
 """
+
+
+# Archive a ride into ride_history then delete from rides (run inside a transaction)
+ARCHIVE_RIDE = f"""
+INSERT INTO ride_history (id, rider_id, driver_id, status, origin, destination, fare, rating, created_at, updated_at, archived_at)
+SELECT id, rider_id, driver_id, status, origin, destination, fare, rating, created_at, updated_at, NOW()
+FROM rides
+WHERE id = $1
+RETURNING id
+"""
+
+DELETE_RIDE_BY_ID = """
+DELETE FROM rides WHERE id = $1
+"""

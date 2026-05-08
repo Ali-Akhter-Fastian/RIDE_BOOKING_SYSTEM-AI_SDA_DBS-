@@ -55,7 +55,7 @@ def _extract_uuid(payload: dict) -> UUID:
 # ------------------------------------------------------------------ #
 
 def get_current_rider_id(
-    token: str = Depends(get_bearer_token),
+    token: str = Depends(get_bearer_token),#Instead, it says: “call the function inside Depends(...) and use its return value here.”
     settings: Settings = Depends(get_settings),
 ) -> UUID:
     """Decode the JWT and assert the caller is a rider."""
