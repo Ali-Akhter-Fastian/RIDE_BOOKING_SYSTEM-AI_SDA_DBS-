@@ -49,7 +49,7 @@ class RideMatchingService(RideServiceBase):
         return ride
 
     async def driver_reject_matched_ride(self, ride_id: UUID, driver_id: UUID) -> Ride:
-        """Driver rejects a matched ride - resets to requested status for re-matching."""
+        """Driver rejects a matched ride and triggers a rematch with a new available driver."""
         ride = await self.repository.get_by_id(ride_id)
         if ride is None:
             raise RideNotFound(f"Ride {ride_id} not found")
@@ -61,6 +61,7 @@ class RideMatchingService(RideServiceBase):
             raise InvalidRideTransition(
                 f"Can only reject rides in 'accepted' status, current status is '{ride.status}'"
             )
-        
-        # Reset ride to requested status for re-matching
-        return await self.repository.reset_driver_assignment(ride_id, driver_id)
+
+        return await self.repository.reject_driver_and_find_new_driver(
+            ride_id, driver_id
+        )
