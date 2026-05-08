@@ -149,6 +149,58 @@ async def test_driver_reject_matched_ride_rejects_wrong_driver(
 
 
 @pytest.mark.asyncio()
+async def test_get_matching_status_returns_ride_for_owner(
+    repo: FakeRideRepository, settings: Settings
+) -> None:
+    """Test get_matching_status returns ride details when rider is the owner"""
+    rider_id = uuid4()
+    driver_id = uuid4()
+    ride = _ride(RideStatus.accepted, rider_id=rider_id, driver_id=driver_id)
+    repo.rides[ride.id] = ride
+
+    result = await RideMatchingService(repo, settings).get_matching_status(
+        ride.id, rider_id
+    )
+
+    assert result.id == ride.id
+    assert result.status == RideStatus.accepted
+    assert result.driver_id == driver_id
+    assert result.rider_id == rider_id
+    assert result.origin == "Downtown"
+    assert result.destination == "Airport"
+
+
+@pytest.mark.asyncio()
+async def test_get_matching_status_rejects_non_owner(
+    repo: FakeRideRepository, settings: Settings
+) -> None:
+    """Test get_matching_status raises error when rider is not the owner"""
+    rider_id = uuid4()
+    other_rider_id = uuid4()
+    ride = _ride(RideStatus.requested, rider_id=rider_id)
+    repo.rides[ride.id] = ride
+
+    with pytest.raises(RideOwnershipError):
+        await RideMatchingService(repo, settings).get_matching_status(
+            ride.id, other_rider_id
+        )
+
+
+@pytest.mark.asyncio()
+async def test_get_matching_status_raises_for_nonexistent_ride(
+    repo: FakeRideRepository, settings: Settings
+) -> None:
+    """Test get_matching_status raises error when ride doesn't exist"""
+    rider_id = uuid4()
+    nonexistent_ride_id = uuid4()
+
+    with pytest.raises(RideNotFound):
+        await RideMatchingService(repo, settings).get_matching_status(
+            nonexistent_ride_id, rider_id
+        )
+
+
+@pytest.mark.asyncio()
 async def test_driver_reject_matched_ride_rejects_wrong_status(
     repo: FakeRideRepository, settings: Settings
 ) -> None:

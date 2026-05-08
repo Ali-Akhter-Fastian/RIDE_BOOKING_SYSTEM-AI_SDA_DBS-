@@ -65,3 +65,12 @@ class RideMatchingService(RideServiceBase):
         return await self.repository.reject_driver_and_find_new_driver(
             ride_id, driver_id
         )
+
+    async def get_matching_status(self, ride_id: UUID, rider_id: UUID) -> Ride:
+        """Get current status of driver matching for a ride (polling endpoint)."""
+        ride = await self.repository.get_by_id(ride_id)
+        if ride is None:
+            raise RideNotFound(f"Ride {ride_id} not found")
+        if ride.rider_id != rider_id:
+            raise RideOwnershipError("You are not the owner of this ride request")
+        return ride

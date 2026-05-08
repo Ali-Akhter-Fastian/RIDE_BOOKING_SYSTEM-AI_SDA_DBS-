@@ -8,7 +8,7 @@
 ```json
 {
   "full_name": "John Doe",
-  "email": "john@example.com",
+  "email": "johnd@example.com",
   "password": "securePassword123",
   "confirm_password": "securePassword123",
   "role": "rider"
