@@ -107,6 +107,19 @@ WHERE id = $1
 RETURNING {RETURNING_FIELDS}
 """
 
+FIND_AVAILABLE_DRIVER = """
+SELECT id
+FROM users
+WHERE role = 'driver'
+  AND id NOT IN (
+      SELECT driver_id
+      FROM rides
+      WHERE status IN ('accepted', 'in_progress')
+        AND driver_id IS NOT NULL
+  )
+LIMIT 1
+"""
+
 
 # Archive a ride into ride_history then delete from rides (run inside a transaction)
 ARCHIVE_RIDE = f"""
