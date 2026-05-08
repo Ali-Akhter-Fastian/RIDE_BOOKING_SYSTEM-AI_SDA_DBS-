@@ -120,6 +120,15 @@ WHERE role = 'driver'
 LIMIT 1
 """
 
+RESET_DRIVER_ASSIGNMENT = f"""
+UPDATE rides
+SET driver_id = NULL, status = 'requested', updated_at = NOW()
+WHERE id = $1
+  AND status = 'accepted'
+  AND driver_id = $2
+RETURNING {RETURNING_FIELDS}
+"""
+
 
 # Archive a ride into ride_history then delete from rides (run inside a transaction)
 ARCHIVE_RIDE = f"""

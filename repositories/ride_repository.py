@@ -12,6 +12,7 @@ from db.queries.ride_queries import (
     COUNT_RIDES_BY_RIDER,
     FIND_AVAILABLE_DRIVER,
     INSERT_RIDE,
+    RESET_DRIVER_ASSIGNMENT,
     SELECT_ACTIVE_RIDE_BY_RIDER,
     SELECT_RIDE_BY_ID,
     SELECT_RIDES_BY_DRIVER_PAGINATED,
@@ -215,6 +216,24 @@ class RideRepository:
         if record is None:
             return None
         return record["id"]
+
+    async def reset_driver_assignment(self, ride_id: UUID, driver_id: UUID) -> Ride:
+        """Reset driver assignment - driver rejected the ride. Ride goes back to 'requested' status."""
+        try:
+            record = await self.connection.fetchrow(
+                RESET_DRIVER_ASSIGNMENT, ride_id, driver_id
+            )
+        except asyncpg.UndefinedTableError as exc:
+            raise RideDatabaseSchemaError(
+                "Rides table is missing. Run DB migrations first."
+            ) from exc
+        except asyncpg.PostgresError as exc:
+            raise RideRepositoryError("Failed to reset driver assignment") from exc
+        if record is None:
+            raise InvalidRideTransition(
+                f"Ride {ride_id} cannot be rejected - invalid status or driver mismatch"
+            )
+        return Ride.from_record(record)
 
     async def archive_and_delete(self, ride_id: UUID) -> None:
         """Archive a ride into `ride_history` and remove it from `rides`.
