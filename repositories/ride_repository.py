@@ -10,7 +10,9 @@ from db.queries.ride_queries import (
     COMPLETE_RIDE,
     COUNT_RIDES_BY_DRIVER,
     COUNT_RIDES_BY_RIDER,
+    FIND_AVAILABLE_DRIVER,
     INSERT_RIDE,
+    RESET_DRIVER_ASSIGNMENT,
     SELECT_ACTIVE_RIDE_BY_RIDER,
     SELECT_RIDE_BY_ID,
     SELECT_RIDES_BY_DRIVER_PAGINATED,
@@ -201,6 +203,74 @@ class RideRepository:
         if record is None:
             return None
         return Ride.from_record(record)
+
+    async def find_available_driver(self) -> UUID | None:
+        try:
+            record = await self.connection.fetchrow(FIND_AVAILABLE_DRIVER)
+        except asyncpg.UndefinedTableError as exc:
+            raise RideDatabaseSchemaError(
+                "Users table is missing. Run DB migrations first."
+            ) from exc
+        except asyncpg.PostgresError as exc:
+            raise RideRepositoryError("Failed to search for an available driver") from exc
+        if record is None:
+            return None
+        return record["id"]
+
+    async def reset_driver_assignment(self, ride_id: UUID, driver_id: UUID) -> Ride:
+        """Reset driver assignment - driver rejected the ride. Ride goes back to 'requested' status."""
+        try:
+            record = await self.connection.fetchrow(
+                RESET_DRIVER_ASSIGNMENT, ride_id, driver_id
+            )
+        except asyncpg.UndefinedTableError as exc:
+            raise RideDatabaseSchemaError(
+                "Rides table is missing. Run DB migrations first."
+            ) from exc
+        except asyncpg.PostgresError as exc:
+            raise RideRepositoryError("Failed to reset driver assignment") from exc
+        if record is None:
+            raise InvalidRideTransition(
+                f"Ride {ride_id} cannot be rejected - invalid status or driver mismatch"
+            )
+        return Ride.from_record(record)
+
+    async def reject_driver_and_find_new_driver(
+        self, ride_id: UUID, driver_id: UUID
+    ) -> Ride:
+        """Reject a matched ride and immediately attempt to rematch a new available driver."""
+        try:
+            async with self.connection.transaction():
+                record = await self.connection.fetchrow(
+                    RESET_DRIVER_ASSIGNMENT, ride_id, driver_id
+                )
+                if record is None:
+                    raise InvalidRideTransition(
+                        f"Ride {ride_id} cannot be rejected - invalid status or driver mismatch"
+                    )
+
+                new_driver = await self.connection.fetchrow(
+                    FIND_AVAILABLE_DRIVER_EXCLUDE, driver_id
+                )
+                if new_driver is None:
+                    return Ride.from_record(record)
+
+                assigned = await self.connection.fetchrow(
+                    ASSIGN_DRIVER,
+                    ride_id,
+                    new_driver["id"],
+                )
+                if assigned is None:
+                    raise RideRepositoryError(
+                        "Failed to assign a replacement driver after rejection"
+                    )
+                return Ride.from_record(assigned)
+        except asyncpg.UndefinedTableError as exc:
+            raise RideDatabaseSchemaError(
+                "Rides or users table is missing. Run DB migrations first."
+            ) from exc
+        except asyncpg.PostgresError as exc:
+            raise RideRepositoryError("Failed to process driver rejection and rematch") from exc
 
     async def archive_and_delete(self, ride_id: UUID) -> None:
         """Archive a ride into `ride_history` and remove it from `rides`.

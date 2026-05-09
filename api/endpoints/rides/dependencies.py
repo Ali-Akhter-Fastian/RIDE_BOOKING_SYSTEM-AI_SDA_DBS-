@@ -17,6 +17,7 @@ from services.rides import (
     RideCreationService,
     RideHistoryService,
     RideLifecycleService,
+    RideMatchingService,
 )
 
 bearer_scheme = HTTPBearer(auto_error=True)
@@ -138,3 +139,10 @@ def get_driver_rating_service(
     settings: Settings = Depends(get_settings),
 ) -> DriverRatingService:
     return DriverRatingService(RideRepository(connection), settings)
+
+
+def get_ride_matching_service(
+    connection=Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> RideMatchingService:
+    return RideMatchingService(RideRepository(connection), settings)
