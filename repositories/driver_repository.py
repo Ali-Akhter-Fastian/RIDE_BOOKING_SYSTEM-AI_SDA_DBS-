@@ -11,8 +11,10 @@ from db.queries.driver_queries import (
     UPDATE_DRIVER_AVAILABILITY,
     UPDATE_DRIVER_RATING,
 )
-from exception.driver_exceptions import DriverDatabaseSchemaError, DriverRepositoryError
+from exception.driver_exceptions import DriverDatabaseSchemaError, DriverRepositoryError, DriverExists
 from models.driver import Driver
+import uuid
+from db.queries.driver_queries import INSERT_VEHICLE
 
 
 class DriverRepository:
@@ -43,13 +45,17 @@ class DriverRepository:
 
     async def create(self, driver: Driver) -> Driver:
         try:
+            # Insert driver-specific fields and link to the user via user_id
             record = await self.connection.fetchrow(
                 INSERT_DRIVER,
                 driver.id,
+                driver.id,  # user_id should match the user id (legacy behavior)
                 driver.full_name,
                 driver.email,
                 driver.password_hash,
                 driver.role.value,
+                driver.created_at,
+                driver.updated_at,
                 driver.license_number,
                 driver.vehicle_number,
                 driver.vehicle_type,
@@ -58,14 +64,24 @@ class DriverRepository:
                 driver.is_available,
             )
         except asyncpg.UniqueViolationError as exc:
-            raise DriverRepositoryError("Email already exists") from exc
+            # Unique violation likely means a driver/user with this identity already exists
+            raise DriverExists("Driver with this id or unique field already exists") from exc
         except asyncpg.UndefinedTableError as exc:
             raise DriverDatabaseSchemaError("Drivers table is missing. Run DB migrations first.") from exc
         except asyncpg.PostgresError as exc:
             raise DriverRepositoryError("Failed to create driver in database") from exc
         if record is None:
-            raise DriverRepositoryError("Failed to create driver - no record returned")
-        return Driver.from_record(record)
+            raise DriverRepositoryError("Failed to create driver - no id returned")
+
+        # Fetch the full joined driver+user record
+        created_id = record["id"]
+        try:
+            joined = await self.connection.fetchrow(SELECT_DRIVER_BY_ID, created_id)
+        except asyncpg.PostgresError as exc:
+            raise DriverRepositoryError("Failed to read created driver from database") from exc
+        if joined is None:
+            raise DriverRepositoryError("Failed to fetch created driver")
+        return Driver.from_record(joined)
 
     async def get_available_drivers(self) -> list[Driver]:
         try:
@@ -85,7 +101,11 @@ class DriverRepository:
             raise DriverRepositoryError("Failed to update driver availability") from exc
         if record is None:
             return None
-        return Driver.from_record(record)
+        # fetch full joined record
+        joined = await self.connection.fetchrow(SELECT_DRIVER_BY_ID, driver_id)
+        if joined is None:
+            return None
+        return Driver.from_record(joined)
 
     async def update_rating(self, driver_id: UUID, new_rating: float) -> Driver | None:
         try:
@@ -96,4 +116,29 @@ class DriverRepository:
             raise DriverRepositoryError("Failed to update driver rating") from exc
         if record is None:
             return None
-        return Driver.from_record(record)
+        joined = await self.connection.fetchrow(SELECT_DRIVER_BY_ID, driver_id)
+        if joined is None:
+            return None
+        return Driver.from_record(joined)
+
+    async def create_vehicle(self, driver_id: UUID, plate_no: str, make_model: str, color: str | None, vehicle_type: str) -> uuid.UUID:
+        try:
+            vehicle_id = uuid.uuid4()
+            record = await self.connection.fetchrow(
+                INSERT_VEHICLE,
+                vehicle_id,
+                plate_no,
+                driver_id,
+                make_model,
+                color,
+                vehicle_type,
+            )
+        except asyncpg.UniqueViolationError as exc:
+            raise DriverExists("Vehicle with this plate number already exists") from exc
+        except asyncpg.UndefinedTableError as exc:
+            raise DriverDatabaseSchemaError("Vehicles table is missing. Run DB migrations first.") from exc
+        except asyncpg.PostgresError as exc:
+            raise DriverRepositoryError("Failed to create vehicle in database") from exc
+        if record is None:
+            raise DriverRepositoryError("Failed to create vehicle - no id returned")
+        return record["vehicle_id"]

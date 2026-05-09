@@ -42,14 +42,22 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.execute("""
         CREATE TABLE drivers (
+            id UUID PRIMARY KEY,
+            user_id UUID NOT NULL UNIQUE,
+            full_name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            role VARCHAR(50) NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             license_number VARCHAR(50) NOT NULL,
             vehicle_number VARCHAR(50) NOT NULL,
             vehicle_type VARCHAR(50) NOT NULL,
             rating DECIMAL(3,2) DEFAULT 0.00,
             total_rides INTEGER DEFAULT 0,
             is_available BOOLEAN DEFAULT true,
-            PRIMARY KEY (id)
-        ) INHERITS (users);
+            CONSTRAINT fk_drivers_user_id_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
     """)
 
     op.execute("CREATE INDEX IF NOT EXISTS idx_drivers_license_number ON drivers (license_number);")

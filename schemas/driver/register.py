@@ -20,6 +20,8 @@ class DriverRegisterRequest(BaseModel):
     license_number: str = Field(min_length=1, max_length=50)
     vehicle_number: str = Field(min_length=1, max_length=50)
     vehicle_type: str = Field(min_length=1, max_length=50)
+    vehicle_make_model: str | None = Field(default=None, min_length=1, max_length=120)
+    vehicle_color: str | None = Field(default=None, max_length=40)
 
     @field_validator('password')
     def password_min_length(cls, v: str):

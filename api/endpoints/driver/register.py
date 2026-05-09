@@ -7,8 +7,10 @@ from services.driver import RegisterDriverService
 from exception.driver_exceptions import raise_driver_http_exception
 
 from .dependencies import get_register_driver_service
+from .location import router as location_router
 
 router = APIRouter()
+router.include_router(location_router)
 
 
 @router.post("/driver/register", response_model=DriverResponse, status_code=status.HTTP_201_CREATED)
