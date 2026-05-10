@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -18,13 +18,19 @@ from services.auth import SessionAuthService
 @dataclass
 class FakeAuthRepository:
     user_by_email: dict[str, User] | None = None
+    user_by_id: dict[UUID, User] | None = None
 
     def __post_init__(self) -> None:
         if self.user_by_email is None:
             self.user_by_email = {}
+        if self.user_by_id is None:
+            self.user_by_id = {}
 
     async def get_by_email(self, email: str) -> User | None:
         return self.user_by_email.get(email.lower())
+    
+    async def get_by_id(self, user_id: UUID) -> User | None:
+        return self.user_by_id.get(user_id)
 
 
 @pytest.fixture()
@@ -89,6 +95,7 @@ async def test_refresh_access_token_returns_new_tokens(
     service = SessionAuthService(repository, settings)
     user = build_user()
     repository.user_by_email[user.email] = user
+    repository.user_by_id[user.id] = user
 
     initial = await service.login_user(LoginRequest(email=user.email, password="password123"))
     refreshed = await service.refresh_access_token(initial.refresh_token)
@@ -116,6 +123,7 @@ async def test_get_current_user_from_access_token(
     service = SessionAuthService(repository, settings)
     user = build_user()
     repository.user_by_email[user.email] = user
+    repository.user_by_id[user.id] = user
 
     tokens = await service.login_user(LoginRequest(email=user.email, password="password123"))
     current = await service.get_current_user(tokens.access_token)

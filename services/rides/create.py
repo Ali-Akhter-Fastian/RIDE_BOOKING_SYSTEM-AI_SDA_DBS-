@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from decimal import Decimal
 from uuid import UUID, uuid4
 
 from core.enums import RideStatus
@@ -32,5 +33,7 @@ class RideCreationService(RideServiceBase):
             rating=None,
             created_at=now,
             updated_at=now,
+            pickup_latitude=Decimal(str(payload.pickup_latitude)),
+            pickup_longitude=Decimal(str(payload.pickup_longitude)),
         )
         return await self.repository.create(ride)

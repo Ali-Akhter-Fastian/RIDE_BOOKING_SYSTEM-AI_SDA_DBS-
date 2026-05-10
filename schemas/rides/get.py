@@ -20,5 +20,7 @@ class RideDetailResponse(BaseModel):
     destination: str
     fare: Decimal | None
     rating: int | None
+    pickup_latitude: float | None
+    pickup_longitude: float | None
     created_at: datetime
     updated_at: datetime

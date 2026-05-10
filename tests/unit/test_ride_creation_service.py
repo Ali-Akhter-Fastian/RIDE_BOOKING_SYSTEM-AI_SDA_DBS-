@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from decimal import Decimal
 from uuid import UUID, uuid4
 
 import pytest
@@ -31,6 +32,8 @@ def _ride(status: RideStatus, rider_id: UUID) -> Ride:
         rating=None,
         created_at=now,
         updated_at=now,
+        pickup_latitude=Decimal("28.6431"),
+        pickup_longitude=Decimal("77.2197"),
     )
 
 
@@ -56,6 +59,8 @@ class FakeRideRepository:
             rating=ride.rating,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
+            pickup_latitude=ride.pickup_latitude,
+            pickup_longitude=ride.pickup_longitude,
         )
         self.created.append(persisted)
         return persisted
@@ -90,7 +95,12 @@ async def test_create_ride_persists_with_requested_status(
     repo: FakeRideRepository, settings: Settings
 ) -> None:
     rider_id = uuid4()
-    payload = CreateRideRequest(origin="Home", destination="Office")
+    payload = CreateRideRequest(
+        origin="Home", 
+        destination="Office",
+        pickup_latitude=28.6431,
+        pickup_longitude=77.2197,
+    )
 
     result = await RideCreationService(repo, settings).create_ride(payload, rider_id)
 
@@ -100,6 +110,8 @@ async def test_create_ride_persists_with_requested_status(
     assert result.destination == "Office"
     assert result.driver_id is None
     assert result.fare is None
+    assert result.pickup_latitude == Decimal("28.6431")
+    assert result.pickup_longitude == Decimal("77.2197")
     assert len(repo.created) == 1
 
 
@@ -109,7 +121,12 @@ async def test_create_ride_raises_if_active_ride_exists(
 ) -> None:
     rider_id = uuid4()
     repo.active_ride = _ride(RideStatus.requested, rider_id)
-    payload = CreateRideRequest(origin="Home", destination="Office")
+    payload = CreateRideRequest(
+        origin="Home", 
+        destination="Office",
+        pickup_latitude=28.6431,
+        pickup_longitude=77.2197,
+    )
 
     with pytest.raises(RiderHasActiveRide):
         await RideCreationService(repo, settings).create_ride(payload, rider_id)
@@ -122,7 +139,12 @@ async def test_create_ride_allows_different_rider_when_another_has_active(
     other_rider = uuid4()
     repo.active_ride = _ride(RideStatus.requested, other_rider)
     my_rider_id = uuid4()
-    payload = CreateRideRequest(origin="Home", destination="Office")
+    payload = CreateRideRequest(
+        origin="Home", 
+        destination="Office",
+        pickup_latitude=28.6431,
+        pickup_longitude=77.2197,
+    )
 
     result = await RideCreationService(repo, settings).create_ride(payload, my_rider_id)
 

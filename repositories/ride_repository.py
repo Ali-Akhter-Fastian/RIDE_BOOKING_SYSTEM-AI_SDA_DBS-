@@ -5,15 +5,19 @@ from uuid import UUID
 import asyncpg
 
 from db.queries.ride_queries import (
+    ACCEPT_MATCHED_RIDE,
     ASSIGN_DRIVER,
     CANCEL_RIDE,
     COMPLETE_RIDE,
     COUNT_RIDES_BY_DRIVER,
     COUNT_RIDES_BY_RIDER,
     FIND_AVAILABLE_DRIVER,
+    FIND_AVAILABLE_DRIVERS_FOR_MATCHING,
+    GET_AVAILABLE_DRIVER_BY_ID,
     INSERT_RIDE,
     RESET_DRIVER_ASSIGNMENT,
     SELECT_ACTIVE_RIDE_BY_RIDER,
+    SELECT_ACTIVE_RIDE_BY_DRIVER,
     SELECT_RIDE_BY_ID,
     SELECT_RIDES_BY_DRIVER_PAGINATED,
     SELECT_RIDES_BY_RIDER_PAGINATED,
@@ -50,6 +54,8 @@ class RideRepository:
                 ride.status.value,
                 ride.origin,
                 ride.destination,
+                ride.pickup_latitude,
+                ride.pickup_longitude,
             )
         except asyncpg.UndefinedTableError as exc:
             raise RideDatabaseSchemaError(
@@ -73,6 +79,21 @@ class RideRepository:
         if record is None:
             raise RideNotFound(
                 f"Ride {ride_id} not found or is no longer in 'requested' status"
+            )
+        return Ride.from_record(record)
+
+    async def accept_matched_ride(self, ride_id: UUID, driver_id: UUID) -> Ride:
+        try:
+            record = await self.connection.fetchrow(ACCEPT_MATCHED_RIDE, ride_id, driver_id)
+        except asyncpg.UndefinedTableError as exc:
+            raise RideDatabaseSchemaError(
+                "Rides table is missing. Run DB migrations first."
+            ) from exc
+        except asyncpg.PostgresError as exc:
+            raise RideRepositoryError("Failed to accept matched ride") from exc
+        if record is None:
+            raise InvalidRideTransition(
+                f"Ride {ride_id} cannot be accepted — it must be in 'offered' status for this driver"
             )
         return Ride.from_record(record)
 
@@ -204,6 +225,21 @@ class RideRepository:
             return None
         return Ride.from_record(record)
 
+    async def get_active_ride_by_driver(self, driver_id: UUID) -> Ride | None:
+        try:
+            record = await self.connection.fetchrow(
+                SELECT_ACTIVE_RIDE_BY_DRIVER, driver_id
+            )
+        except asyncpg.UndefinedTableError as exc:
+            raise RideDatabaseSchemaError(
+                "Rides table is missing. Run DB migrations first."
+            ) from exc
+        except asyncpg.PostgresError as exc:
+            raise RideRepositoryError("Failed to check active driver ride") from exc
+        if record is None:
+            return None
+        return Ride.from_record(record)
+
     async def find_available_driver(self) -> UUID | None:
         try:
             record = await self.connection.fetchrow(FIND_AVAILABLE_DRIVER)
@@ -290,3 +326,47 @@ class RideRepository:
             ) from exc
         except asyncpg.PostgresError as exc:
             raise RideRepositoryError("Failed to archive and delete ride") from exc
+
+    async def get_available_drivers_for_matching(
+        self, exclude_driver_id: UUID | None = None
+    ) -> list[dict]:
+        """Get all available drivers for ride matching.
+        
+        Returns drivers who are not currently assigned to any active ride.
+        
+        Args:
+            exclude_driver_id: Optional driver ID to exclude from results (e.g., for rematch)
+            
+        Returns:
+            List of driver dicts with keys: id, full_name, email, rating, total_rides
+        """
+        try:
+            records = await self.connection.fetch(
+                FIND_AVAILABLE_DRIVERS_FOR_MATCHING,
+                exclude_driver_id,
+            )
+            return [dict(record) for record in records]
+        except asyncpg.UndefinedTableError as exc:
+            raise RideDatabaseSchemaError(
+                "Drivers table is missing. Run DB migrations first."
+            ) from exc
+        except asyncpg.PostgresError as exc:
+            raise RideRepositoryError("Failed to fetch available drivers") from exc
+
+    async def get_driver_by_id(self, driver_id: UUID) -> dict | None:
+        """Get driver info by ID, checking availability.
+        
+        Args:
+            driver_id: Driver UUID
+            
+        Returns:
+            Driver dict or None if not found or not available
+        """
+        try:
+            record = await self.connection.fetchrow(
+                GET_AVAILABLE_DRIVER_BY_ID,
+                driver_id,
+            )
+            return dict(record) if record else None
+        except asyncpg.PostgresError as exc:
+            raise RideRepositoryError("Failed to fetch driver") from exc

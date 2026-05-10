@@ -10,6 +10,7 @@ class UserRole(str, Enum):
 
 class RideStatus(str, Enum):
     requested = "requested"
+    offered = "offered"
     accepted = "accepted"
     in_progress = "in_progress"
     completed = "completed"

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 RETURNING_FIELDS = """
-    id, rider_id, driver_id, status, origin, destination, fare, rating, created_at, updated_at
+    id, rider_id, driver_id, status, origin, destination, fare, rating, created_at, updated_at, pickup_latitude, pickup_longitude
 """
 
 INSERT_RIDE = f"""
-INSERT INTO rides (id, rider_id, status, origin, destination, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+INSERT INTO rides (id, rider_id, status, origin, destination, pickup_latitude, pickup_longitude, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
 RETURNING {RETURNING_FIELDS}
 """
 
@@ -60,7 +60,16 @@ SELECT_ACTIVE_RIDE_BY_RIDER = f"""
 SELECT {RETURNING_FIELDS}
 FROM rides
 WHERE rider_id = $1
-  AND status IN ('requested', 'accepted', 'in_progress')
+  AND status IN ('requested', 'offered', 'accepted', 'in_progress')
+LIMIT 1
+"""
+
+SELECT_ACTIVE_RIDE_BY_DRIVER = f"""
+SELECT {RETURNING_FIELDS}
+FROM rides
+WHERE driver_id = $1
+  AND status IN ('offered', 'accepted', 'in_progress')
+ORDER BY updated_at DESC
 LIMIT 1
 """
 
@@ -83,9 +92,18 @@ RETURNING {RETURNING_FIELDS}
 
 ASSIGN_DRIVER = f"""
 UPDATE rides
-SET driver_id = $2, status = 'accepted', updated_at = NOW()
+SET driver_id = $2, status = 'offered', updated_at = NOW()
 WHERE id = $1
   AND status = 'requested'
+RETURNING {RETURNING_FIELDS}
+"""
+
+ACCEPT_MATCHED_RIDE = f"""
+UPDATE rides
+SET status = 'accepted', updated_at = NOW()
+WHERE id = $1
+  AND driver_id = $2
+  AND status = 'offered'
 RETURNING {RETURNING_FIELDS}
 """
 
@@ -93,7 +111,7 @@ CANCEL_RIDE = f"""
 UPDATE rides
 SET status = 'cancelled', updated_at = NOW()
 WHERE id = $1
-  AND status IN ('requested', 'accepted')
+  AND status IN ('requested', 'offered', 'accepted')
 RETURNING {RETURNING_FIELDS}
 """
 
@@ -114,7 +132,7 @@ WHERE role = 'driver'
   AND id NOT IN (
       SELECT driver_id
       FROM rides
-      WHERE status IN ('accepted', 'in_progress')
+      WHERE status IN ('offered', 'accepted', 'in_progress')
         AND driver_id IS NOT NULL
   )
 LIMIT 1
@@ -128,7 +146,7 @@ WHERE role = 'driver'
   AND id NOT IN (
       SELECT driver_id
       FROM rides
-      WHERE status IN ('accepted', 'in_progress')
+      WHERE status IN ('offered', 'accepted', 'in_progress')
         AND driver_id IS NOT NULL
   )
 LIMIT 1
@@ -139,7 +157,7 @@ RESET_DRIVER_ASSIGNMENT = f"""
 UPDATE rides
 SET driver_id = NULL, status = 'requested', updated_at = NOW()
 WHERE id = $1
-  AND status = 'accepted'
+  AND status = 'offered'
   AND driver_id = $2
 RETURNING {RETURNING_FIELDS}
 """
@@ -156,4 +174,40 @@ RETURNING id
 
 DELETE_RIDE_BY_ID = """
 DELETE FROM rides WHERE id = $1
+"""
+
+# Find available drivers for matching - will be ranked in application layer
+# $1 = exclude_driver_id (optional), returns all available drivers
+FIND_AVAILABLE_DRIVERS_FOR_MATCHING = """
+SELECT 
+    d.id,
+    d.full_name,
+    d.email,
+    d.rating,
+    d.total_rides,
+    d.is_available
+FROM drivers d
+WHERE d.is_available = true
+  AND d.id NOT IN (
+      SELECT driver_id
+      FROM rides
+  WHERE status IN ('offered', 'accepted', 'in_progress')
+        AND driver_id IS NOT NULL
+  )
+  AND ($1::uuid IS NULL OR d.id != $1::uuid)
+ORDER BY d.rating DESC, d.total_rides DESC
+"""
+
+# Get best available driver by ID only (fast lookup for single assignment)
+GET_AVAILABLE_DRIVER_BY_ID = """
+SELECT id, full_name, email, rating, total_rides
+FROM drivers
+WHERE id = $1
+  AND is_available = true
+  AND id NOT IN (
+      SELECT driver_id
+      FROM rides
+      WHERE status IN ('offered', 'accepted', 'in_progress')
+        AND driver_id IS NOT NULL
+  )
 """

@@ -20,6 +20,8 @@ class Ride:
     rating: int | None
     created_at: datetime
     updated_at: datetime
+    pickup_latitude: Decimal | None = None
+    pickup_longitude: Decimal | None = None
 
     @classmethod
     def from_record(cls, record: object) -> "Ride":
@@ -34,4 +36,6 @@ class Ride:
             rating=record["rating"],
             created_at=record["created_at"],
             updated_at=record["updated_at"],
+            pickup_latitude=record.get("pickup_latitude"),
+            pickup_longitude=record.get("pickup_longitude"),
         )

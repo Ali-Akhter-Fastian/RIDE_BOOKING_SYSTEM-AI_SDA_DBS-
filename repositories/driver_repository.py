@@ -94,7 +94,7 @@ class DriverRepository:
 
     async def update_availability(self, driver_id: UUID, is_available: bool) -> Driver | None:
         try:
-            record = await self.connection.fetchrow(UPDATE_DRIVER_AVAILABILITY, driver_id, is_available)
+            record = await self.connection.fetchrow(UPDATE_DRIVER_AVAILABILITY, str(driver_id), is_available)
         except asyncpg.UndefinedTableError as exc:
             raise DriverDatabaseSchemaError("Drivers table is missing. Run DB migrations first.") from exc
         except asyncpg.PostgresError as exc:
@@ -102,7 +102,7 @@ class DriverRepository:
         if record is None:
             return None
         # fetch full joined record
-        joined = await self.connection.fetchrow(SELECT_DRIVER_BY_ID, driver_id)
+        joined = await self.connection.fetchrow(SELECT_DRIVER_BY_ID, record["id"])
         if joined is None:
             return None
         return Driver.from_record(joined)

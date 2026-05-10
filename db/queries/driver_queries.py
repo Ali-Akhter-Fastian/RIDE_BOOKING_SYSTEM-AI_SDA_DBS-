@@ -87,7 +87,7 @@ ORDER BY drivers.rating DESC, drivers.total_rides DESC
 UPDATE_DRIVER_AVAILABILITY = """
 UPDATE drivers
 SET is_available = $2, updated_at = NOW()
-WHERE id = $1
+WHERE id = $1 OR user_id = $1
 RETURNING id
 """
 

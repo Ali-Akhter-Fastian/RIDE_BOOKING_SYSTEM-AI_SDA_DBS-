@@ -12,6 +12,8 @@ from core.enums import RideStatus
 class CreateRideRequest(BaseModel):
     origin: str = Field(min_length=3, max_length=255)
     destination: str = Field(min_length=3, max_length=255)
+    pickup_latitude: float = Field(ge=-90, le=90)
+    pickup_longitude: float = Field(ge=-180, le=180)
 
 
 class CreateRideResponse(BaseModel):
@@ -24,5 +26,7 @@ class CreateRideResponse(BaseModel):
     origin: str
     destination: str
     fare: Decimal | None
+    pickup_latitude: float | None
+    pickup_longitude: float | None
     created_at: datetime
     updated_at: datetime
