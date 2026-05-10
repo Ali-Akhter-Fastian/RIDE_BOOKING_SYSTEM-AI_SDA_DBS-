@@ -8,6 +8,7 @@ from api.endpoints.rides.dependencies import (
     get_current_driver_id,
     get_ride_matching_service,
 )
+from core.ws import ws_hub
 from exception.ride_exceptions import raise_ride_http_exception
 from schemas.matching.accept import MatchingAcceptRequest
 from schemas.rides.get import RideDetailResponse
@@ -29,6 +30,16 @@ async def accept_matched_ride(
 ) -> RideDetailResponse:
     try:
         ride = await service.driver_accept_matched_ride(payload.ride_id, driver_id)
+        await ws_hub.emit_to_rider(
+            ride.rider_id,
+            "ride_accepted",
+            {"ride_id": str(ride.id), "driver_id": str(driver_id), "status": ride.status.value},
+        )
+        await ws_hub.emit_to_driver(
+            driver_id,
+            "status_update",
+            {"ride_id": str(ride.id), "status": ride.status.value},
+        )
         return RideDetailResponse.model_validate(ride)
     except Exception as exc:
         raise_ride_http_exception(exc)

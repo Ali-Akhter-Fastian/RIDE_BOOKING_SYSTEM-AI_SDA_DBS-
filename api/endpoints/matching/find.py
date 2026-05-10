@@ -8,6 +8,7 @@ from api.endpoints.rides.dependencies import (
     get_current_rider_id,
     get_ride_matching_service,
 )
+from core.ws import ws_hub
 from exception.ride_exceptions import raise_ride_http_exception
 from schemas.matching.find import MatchingFindRequest
 from schemas.rides.get import RideDetailResponse
@@ -29,6 +30,22 @@ async def find_match(
 ) -> RideDetailResponse:
     try:
         ride = await service.find_driver_for_ride(payload.ride_id, rider_id)
+        if ride.driver_id is not None:
+            await ws_hub.emit_to_rider(
+                ride.rider_id,
+                "driver_matched",
+                {"ride_id": str(ride.id), "driver_id": str(ride.driver_id), "status": ride.status.value},
+            )
+            await ws_hub.emit_to_driver(
+                ride.driver_id,
+                "ride_offer",
+                {
+                    "ride_id": str(ride.id),
+                    "rider_id": str(ride.rider_id),
+                    "origin": ride.origin,
+                    "destination": ride.destination,
+                },
+            )
         return RideDetailResponse.model_validate(ride)
     except Exception as exc:
         raise_ride_http_exception(exc)

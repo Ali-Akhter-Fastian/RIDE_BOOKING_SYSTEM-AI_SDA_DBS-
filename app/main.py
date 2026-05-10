@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from api.router import api_router
+from api.endpoints.websocket import router as websocket_router
 from db.connection import close_pool, create_pool
 
 API_PREFIX = "/api"
@@ -44,6 +45,7 @@ app.add_middleware(
 # Routing:
 # When a request comes in → FastAPI checks the path → finds the matching route → runs the corresponding function.
 app.include_router(api_router, prefix=API_PREFIX)
+app.include_router(websocket_router)
 
 # Purpose of main.py
 # The app starts in main.py, loads settings, opens a PostgreSQL pool with asyncpg, 
