@@ -15,6 +15,10 @@ class DriverNotFound(DriverError):
     pass
 
 
+class DriverPermissionError(DriverError):
+    pass
+
+
 class DriverRepositoryError(DriverError):
     pass
 
@@ -28,6 +32,8 @@ def raise_driver_http_exception(exc: Exception) -> None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     if isinstance(exc, DriverNotFound):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    if isinstance(exc, DriverPermissionError):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
     if isinstance(exc, DriverDatabaseSchemaError):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
     if isinstance(exc, DriverRepositoryError):
