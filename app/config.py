@@ -13,6 +13,7 @@ class Settings:
     database_url: str
     jwt_secret: str
     jwt_algorithm: str = "HS256"
+    payment_webhook_secret: str = "dev-payment-webhook-secret"
     access_token_expire_minutes: int = 60
     refresh_token_expire_minutes: int = 10080
     db_pool_min_size: int = 1
@@ -40,6 +41,7 @@ def get_settings() -> Settings:
         database_url=_require_env_any("DATABASE_URL", "DB_URL"),
         jwt_secret=_require_env("JWT_SECRET"),
         jwt_algorithm=os.getenv("JWT_ALGORITHM", "HS256"),
+        payment_webhook_secret=os.getenv("PAYMENT_WEBHOOK_SECRET", "dev-payment-webhook-secret"),
         access_token_expire_minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")),
         refresh_token_expire_minutes=int(os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES", "10080")),
         db_pool_min_size=int(os.getenv("DB_POOL_MIN_SIZE", "1")),
