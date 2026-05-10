@@ -5,8 +5,10 @@ import asyncpg
 from db.queries.auth_queries import SELECT_USER_BY_ID
 from db.queries.driver_queries import (
     INSERT_DRIVER,
+    SELECT_DRIVER_EARNINGS_SUMMARY,
     SELECT_DRIVER_BY_EMAIL,
     SELECT_DRIVER_BY_ID,
+    SELECT_NEARBY_DRIVERS,
     SELECT_AVAILABLE_DRIVERS,
     UPDATE_DRIVER_AVAILABILITY,
     UPDATE_DRIVER_RATING,
@@ -142,3 +144,55 @@ class DriverRepository:
         if record is None:
             raise DriverRepositoryError("Failed to create vehicle - no id returned")
         return record["vehicle_id"]
+
+    async def get_nearby_drivers(self, lat: float, lng: float, radius_km: float) -> list[dict]:
+        try:
+            records = await self.connection.fetch(SELECT_NEARBY_DRIVERS, lat, lng, radius_km)
+            return [
+                {
+                    "driver_id": str(record["driver_id"]),
+                    "full_name": record["full_name"],
+                    "latitude": float(record["latitude"]),
+                    "longitude": float(record["longitude"]),
+                    "distance_km": float(record["distance_km"]),
+                }
+                for record in records
+            ]
+        except asyncpg.UndefinedTableError as exc:
+            raise DriverDatabaseSchemaError("Driver locations table is missing. Run DB migrations first.") from exc
+        except asyncpg.PostgresError as exc:
+            raise DriverRepositoryError("Failed to fetch nearby drivers") from exc
+
+    async def get_driver_earnings(
+        self,
+        driver_id: UUID,
+        from_ts: str | None = None,
+        to_ts: str | None = None,
+    ) -> dict:
+        # Resolve `driver_id` input against either drivers.id or drivers.user_id
+        resolved = await self.connection.fetchrow(
+            "SELECT id FROM drivers WHERE id = $1 OR user_id = $1 LIMIT 1",
+            str(driver_id),
+        )
+        if not resolved:
+            raise DriverRepositoryError("Driver not found")
+
+        resolved_driver_id = resolved["id"]
+        try:
+            summary = await self.connection.fetchrow(
+                SELECT_DRIVER_EARNINGS_SUMMARY,
+                resolved_driver_id,
+                from_ts,
+                to_ts,
+            )
+        except asyncpg.PostgresError as exc:
+            raise DriverRepositoryError("Failed to fetch driver earnings") from exc
+
+        return {
+            "driver_id": str(resolved_driver_id),
+            "completed_rides": int(summary["completed_rides"] or 0),
+            "total_earnings": float(summary["total_earnings"] or 0),
+            "average_fare": float(summary["average_fare"] or 0),
+            "from": from_ts,
+            "to": to_ts,
+        }

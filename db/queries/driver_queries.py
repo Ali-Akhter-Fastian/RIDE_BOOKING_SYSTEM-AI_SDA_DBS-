@@ -104,3 +104,65 @@ INSERT INTO vehicles (vehicle_id, plate_no, driver_id, make_model, color, vehicl
 VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
 RETURNING vehicle_id
 """
+
+SELECT_NEARBY_DRIVERS = """
+WITH latest_locations AS (
+    SELECT DISTINCT ON (dl.driver_id)
+        dl.driver_id,
+        dl.latitude,
+        dl.longitude,
+        dl.recorded_at
+    FROM driver_locations dl
+    ORDER BY dl.driver_id, dl.recorded_at DESC
+),
+available AS (
+    SELECT
+        d.id AS driver_id,
+        d.user_id,
+        ll.latitude,
+        ll.longitude
+    FROM drivers d
+    JOIN latest_locations ll ON ll.driver_id = d.id
+    WHERE d.is_available = true
+)
+SELECT
+    a.driver_id,
+    u.full_name,
+    a.latitude,
+    a.longitude,
+    (
+        6371 * acos(
+            LEAST(
+                1,
+                cos(radians($1)) * cos(radians(a.latitude::float8))
+                * cos(radians(a.longitude::float8) - radians($2))
+                + sin(radians($1)) * sin(radians(a.latitude::float8))
+            )
+        )
+    ) AS distance_km
+FROM available a
+JOIN users u ON u.id = a.user_id
+WHERE (
+    6371 * acos(
+        LEAST(
+            1,
+            cos(radians($1)) * cos(radians(a.latitude::float8))
+            * cos(radians(a.longitude::float8) - radians($2))
+            + sin(radians($1)) * sin(radians(a.latitude::float8))
+        )
+    )
+) <= $3
+ORDER BY distance_km ASC
+LIMIT 100
+"""
+
+SELECT_DRIVER_EARNINGS_SUMMARY = """
+SELECT
+    COUNT(*) FILTER (WHERE status = 'completed') AS completed_rides,
+    COALESCE(SUM(fare) FILTER (WHERE status = 'completed'), 0) AS total_earnings,
+    COALESCE(AVG(fare) FILTER (WHERE status = 'completed'), 0) AS average_fare
+FROM rides
+WHERE driver_id = $1
+  AND ($2::timestamptz IS NULL OR updated_at >= $2::timestamptz)
+  AND ($3::timestamptz IS NULL OR updated_at <= $3::timestamptz)
+"""
