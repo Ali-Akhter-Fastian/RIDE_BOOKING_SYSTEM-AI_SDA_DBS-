@@ -6,6 +6,7 @@ from enum import Enum
 class UserRole(str, Enum):
     rider = "rider"
     driver = "driver"
+    admin = "admin"
 
 
 class RideStatus(str, Enum):
@@ -14,4 +15,14 @@ class RideStatus(str, Enum):
     accepted = "accepted"
     in_progress = "in_progress"
     completed = "completed"
+    cancelled = "cancelled"
+
+
+class PaymentStatus(str, Enum):
+    pending = "pending"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
+    refunded = "refunded"
+    partially_refunded = "partially_refunded"
     cancelled = "cancelled"
