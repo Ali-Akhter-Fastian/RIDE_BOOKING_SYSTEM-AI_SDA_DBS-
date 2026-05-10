@@ -4,6 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
+from core.ws import ws_hub
 from exception.ride_exceptions import raise_ride_http_exception
 from schemas.rides.status import RideStatusResponse
 from services.rides import RideLifecycleService
@@ -25,6 +26,11 @@ async def accept_ride(
 ) -> RideStatusResponse:
     try:
         ride = await service.accept_ride(ride_id, driver_id)
+        await ws_hub.emit_to_rider(
+            ride.rider_id,
+            "ride_accepted",
+            {"ride_id": str(ride.id), "driver_id": str(driver_id), "status": ride.status.value},
+        )
         return RideStatusResponse.model_validate(ride)
     except Exception as exc:
         raise_ride_http_exception(exc)
@@ -42,6 +48,11 @@ async def start_ride(
 ) -> RideStatusResponse:
     try:
         ride = await service.start_ride(ride_id, driver_id)
+        await ws_hub.emit_to_rider(
+            ride.rider_id,
+            "status_update",
+            {"ride_id": str(ride.id), "status": ride.status.value},
+        )
         return RideStatusResponse.model_validate(ride)
     except Exception as exc:
         raise_ride_http_exception(exc)
@@ -59,6 +70,9 @@ async def complete_ride(
 ) -> RideStatusResponse:
     try:
         ride = await service.complete_ride(ride_id, driver_id)
+        payload = {"ride_id": str(ride.id), "status": ride.status.value}
+        await ws_hub.emit_to_rider(ride.rider_id, "ride_completed", payload)
+        await ws_hub.emit_to_driver(driver_id, "ride_completed", payload)
         return RideStatusResponse.model_validate(ride)
     except Exception as exc:
         raise_ride_http_exception(exc)
