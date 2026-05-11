@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import datetime
 from uuid import UUID
 import asyncpg
 
@@ -169,30 +170,91 @@ class DriverRepository:
         from_ts: str | None = None,
         to_ts: str | None = None,
     ) -> dict:
+        def _normalize_ts(value: str | None) -> str | None:
+            if value is None:
+                return None
+            raw = str(value).strip()
+            if not raw:
+                return None
+            if raw.endswith("Z"):
+                raw = f"{raw[:-1]}+00:00"
+            try:
+                return datetime.fromisoformat(raw).isoformat()
+            except ValueError:
+                return None
+
+        normalized_from = _normalize_ts(from_ts)
+        normalized_to = _normalize_ts(to_ts)
+
         # Resolve `driver_id` input against either drivers.id or drivers.user_id
-        resolved = await self.connection.fetchrow(
-            "SELECT id FROM drivers WHERE id = $1 OR user_id = $1 LIMIT 1",
-            str(driver_id),
-        )
+        try:
+            resolved = await self.connection.fetchrow(
+                "SELECT id FROM drivers WHERE id = $1 OR user_id = $1 LIMIT 1",
+                str(driver_id),
+            )
+        except asyncpg.PostgresError as exc:
+            raise DriverRepositoryError("Failed to resolve driver for earnings") from exc
         if not resolved:
-            raise DriverRepositoryError("Driver not found")
+            # Legacy data may contain driver-role users without a drivers row.
+            # Return an empty summary instead of surfacing a 503 error.
+            return {
+                "driver_id": str(driver_id),
+                "completed_rides": 0,
+                "total_earnings": 0.0,
+                "average_fare": 0.0,
+                "from": normalized_from,
+                "to": normalized_to,
+            }
 
         resolved_driver_id = resolved["id"]
         try:
             summary = await self.connection.fetchrow(
                 SELECT_DRIVER_EARNINGS_SUMMARY,
                 resolved_driver_id,
-                from_ts,
-                to_ts,
+                normalized_from,
+                normalized_to,
             )
+        except asyncpg.UndefinedColumnError:
+            # Backward-compatible fallback for DBs that don't have `rides.fare` yet.
+            count_only = await self.connection.fetchrow(
+                """
+                SELECT COUNT(*) FILTER (WHERE status = 'completed') AS completed_rides
+                FROM rides
+                WHERE driver_id = $1
+                  AND ($2::timestamptz IS NULL OR updated_at >= $2::timestamptz)
+                  AND ($3::timestamptz IS NULL OR updated_at <= $3::timestamptz)
+                """,
+                resolved_driver_id,
+                normalized_from,
+                normalized_to,
+            )
+            completed_rides = 0
+            if count_only is not None and count_only["completed_rides"] is not None:
+                completed_rides = int(count_only["completed_rides"])
+            summary = {
+                "completed_rides": completed_rides,
+                "total_earnings": 0,
+                "average_fare": 0,
+            }
         except asyncpg.PostgresError as exc:
-            raise DriverRepositoryError("Failed to fetch driver earnings") from exc
+            # If filtered query fails, fallback to unfiltered aggregate instead of 503.
+            try:
+                summary = await self.connection.fetchrow(
+                    SELECT_DRIVER_EARNINGS_SUMMARY,
+                    resolved_driver_id,
+                    None,
+                    None,
+                )
+                normalized_from = None
+                normalized_to = None
+            except asyncpg.PostgresError as fallback_exc:
+                raise DriverRepositoryError("Failed to fetch driver earnings") from fallback_exc
 
         return {
             "driver_id": str(resolved_driver_id),
             "completed_rides": int(summary["completed_rides"] or 0),
             "total_earnings": float(summary["total_earnings"] or 0),
             "average_fare": float(summary["average_fare"] or 0),
-            "from": from_ts,
-            "to": to_ts,
+            "from": normalized_from,
+            "to": normalized_to,
         }
