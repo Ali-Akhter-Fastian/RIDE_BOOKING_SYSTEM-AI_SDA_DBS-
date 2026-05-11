@@ -38,3 +38,33 @@ Feature and domain modules are top-level packages:
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
+
+## n8n Integration
+
+The app can emit ride lifecycle events to an n8n webhook for email notifications.
+
+Environment variables:
+
+- `N8N_WEBHOOK_URL` — URL of the n8n incoming webhook.
+- `N8N_WEBHOOK_SECRET` — optional secret header value sent as `X-N8N-Webhook-Secret`.
+- `N8N_WEBHOOK_TIMEOUT_SEC` — request timeout in seconds (default `5`).
+
+Event payloads include:
+
+- `ride_requested`
+- `ride_accepted`
+- `ride_completed`
+
+Example payload:
+
+```json
+{
+  "event": "ride_accepted",
+  "payload": {
+    "ride_id": "...",
+    "rider_id": "...",
+    "driver_id": "...",
+    "status": "accepted"
+  }
+}
+```
