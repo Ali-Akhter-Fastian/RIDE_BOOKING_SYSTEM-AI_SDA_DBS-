@@ -5,7 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from core.enums import RideStatus
+from core.enums import RideStatus, RideType
 
 
 @dataclass(slots=True)
@@ -16,6 +16,7 @@ class Ride:
     status: RideStatus
     origin: str
     destination: str
+    ride_type: RideType
     fare: Decimal | None
     rating: int | None
     created_at: datetime
@@ -32,6 +33,7 @@ class Ride:
             status=RideStatus(record["status"]),
             origin=record["origin"],
             destination=record["destination"],
+            ride_type=RideType(record["ride_type"]),
             fare=record["fare"],
             rating=record["rating"],
             created_at=record["created_at"],

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 RETURNING_FIELDS = """
-    id, rider_id, driver_id, status, origin, destination, fare, rating, created_at, updated_at, pickup_latitude, pickup_longitude
+  id, rider_id, driver_id, status, origin, destination, ride_type, fare, rating, created_at, updated_at, pickup_latitude, pickup_longitude
 """
 
 INSERT_RIDE = f"""
-INSERT INTO rides (id, rider_id, status, origin, destination, pickup_latitude, pickup_longitude, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+INSERT INTO rides (id, rider_id, status, origin, destination, ride_type, fare, pickup_latitude, pickup_longitude, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
 RETURNING {RETURNING_FIELDS}
 """
 

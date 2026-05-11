@@ -4,7 +4,7 @@ import logging
 from decimal import Decimal
 from uuid import UUID
 
-from core.enums import PaymentStatus, RideStatus
+from core.enums import PaymentStatus, RideStatus, RideType
 from exception.payment_exceptions import (
     InvalidPaymentMethod,
     InvalidPaymentStatus,
@@ -22,6 +22,11 @@ class PaymentCreateService(PaymentServiceBase):
     """Service for creating payments"""
 
     SUPPORTED_METHODS = {"card", "wallet", "cash"}
+    BASE_FARES = {
+        RideType.ridex: Decimal("4.20"),
+        RideType.ridexl: Decimal("6.80"),
+        RideType.comfort: Decimal("9.50"),
+    }
 
     def __init__(self, repository, settings, ride_repository: RideRepository | None = None):
         super().__init__(repository, settings)
@@ -72,14 +77,29 @@ class PaymentCreateService(PaymentServiceBase):
         except PaymentNotFound:
             pass
 
-        charge_amount = amount if ride.fare is None else ride.fare
-        if ride.fare is not None and amount != ride.fare:
+        charge_amount = ride.fare
+        if charge_amount is None:
+            try:
+                charge_amount = self.BASE_FARES[ride.ride_type]
+                logger.info(
+                    "payment_amount_fallback_to_ride_type ride_id=%s user_id=%s ride_type=%s amount=%s",
+                    ride_id,
+                    user_id,
+                    ride.ride_type,
+                    charge_amount,
+                )
+            except KeyError as exc:
+                raise ValueError(
+                    f"Ride fare is missing for ride {ride_id} and ride type {ride.ride_type} is unsupported"
+                ) from exc
+
+        if amount != charge_amount:
             logger.info(
                 "payment_amount_adjusted_to_ride_fare ride_id=%s user_id=%s requested_amount=%s fare=%s",
                 ride_id,
                 user_id,
                 amount,
-                ride.fare,
+                charge_amount,
             )
 
         payment_id = uuid4()

@@ -12,6 +12,7 @@ from db.queries.ride_queries import (
     COUNT_RIDES_BY_DRIVER,
     COUNT_RIDES_BY_RIDER,
     FIND_AVAILABLE_DRIVER,
+    FIND_AVAILABLE_DRIVER_EXCLUDE,
     FIND_AVAILABLE_DRIVERS_FOR_MATCHING,
     GET_AVAILABLE_DRIVER_BY_ID,
     INSERT_RIDE,
@@ -54,6 +55,8 @@ class RideRepository:
                 ride.status.value,
                 ride.origin,
                 ride.destination,
+                ride.ride_type.value,
+                ride.fare,
                 ride.pickup_latitude,
                 ride.pickup_longitude,
             )

@@ -4,10 +4,8 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from core.security import hash_password
-from core.enums import UserRole
 from exception.auth_exceptions import UserExists
 from models.user import User
-from repositories.auth_repository import AuthRepository
 from schemas.auth.register import RegisterRequest
 
 from .base import AuthServiceBase
@@ -30,9 +28,4 @@ class RegisterAuthService(AuthServiceBase):
             updated_at=now,
         )
         created_user = await self.repository.create(user)
-        if (
-            created_user.role == UserRole.rider
-            and hasattr(self.repository, "create_rider_profile_if_missing")
-        ):
-            await self.repository.create_rider_profile_if_missing(created_user.id)
         return created_user

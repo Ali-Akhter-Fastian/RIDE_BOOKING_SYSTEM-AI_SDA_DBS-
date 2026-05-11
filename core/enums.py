@@ -18,6 +18,12 @@ class RideStatus(str, Enum):
     cancelled = "cancelled"
 
 
+class RideType(str, Enum):
+    ridex = "ridex"
+    ridexl = "ridexl"
+    comfort = "comfort"
+
+
 class PaymentStatus(str, Enum):
     pending = "pending"
     processing = "processing"
