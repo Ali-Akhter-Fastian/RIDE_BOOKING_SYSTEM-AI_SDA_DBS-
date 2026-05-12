@@ -31,6 +31,14 @@ Feature and domain modules are top-level packages:
 3. Run the PostgreSQL migration in [migrations/001_users.sql](migrations/001_users.sql).
 4. Start the API with `uvicorn app.main:app --reload`.
 
+## Ride Completion Automation Branch
+
+This branch focuses on automating ride completion workflows and testing ride lifecycle behavior. Key artifacts include:
+
+- `test_matching_status.py` for matching and completion validation
+- `run_test_with_server.py` for running integration tests against a live API
+- `N8N` workflow files under `n8n_workflows/` for ride completion orchestration
+
 ## Auth Routes
 
 - `POST /api/auth/register`
