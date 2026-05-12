@@ -21,6 +21,7 @@ class Settings:
     refresh_token_expire_minutes: int = 10080
     db_pool_min_size: int = 1
     db_pool_max_size: int = 10
+    n8n_webhook_url: str | None = None
 
 
 def _require_env(name: str) -> str:
@@ -52,4 +53,5 @@ def get_settings() -> Settings:
         refresh_token_expire_minutes=int(os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES", "10080")),
         db_pool_min_size=int(os.getenv("DB_POOL_MIN_SIZE", "1")),
         db_pool_max_size=int(os.getenv("DB_POOL_MAX_SIZE", "10")),
+        n8n_webhook_url=os.getenv("N8N_WEBHOOK_URL"),
     )
