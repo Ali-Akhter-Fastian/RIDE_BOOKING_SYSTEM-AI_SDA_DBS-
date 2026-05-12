@@ -40,3 +40,11 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+
+
+.env
+alembic.ini
+migrations/env.py
+.venv/
+__pycache__/
