@@ -12,6 +12,7 @@ from core.security import decode_access_token
 from exception.auth_exceptions import TokenError
 from exception.ride_exceptions import raise_ride_http_exception
 from repositories.ride_repository import RideRepository
+from services.integrations import N8NWebhookService
 from services.rides import (
     DriverRatingService,
     RideCreationService,
@@ -146,3 +147,9 @@ def get_ride_matching_service(
     settings: Settings = Depends(get_settings),
 ) -> RideMatchingService:
     return RideMatchingService(RideRepository(connection), settings)
+
+
+def get_n8n_webhook_service(
+    settings: Settings = Depends(get_settings),
+) -> N8NWebhookService:
+    return N8NWebhookService(settings)

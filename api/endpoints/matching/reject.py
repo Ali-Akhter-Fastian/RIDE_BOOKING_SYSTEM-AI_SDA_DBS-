@@ -45,6 +45,7 @@ async def reject_matched_ride(
                 ride.driver_id,
                 "ride_offer",
                 {
+                    "id": str(ride.id),
                     "ride_id": str(ride.id),
                     "rider_id": str(ride.rider_id),
                     "origin": ride.origin,
