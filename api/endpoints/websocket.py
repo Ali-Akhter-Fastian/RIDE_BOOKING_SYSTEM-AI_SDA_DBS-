@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 
-from app.dependencies import get_db
+from app.dependencies import get_db_ws
 from core.ws import ws_hub
 
 router = APIRouter(tags=["websocket"])
@@ -35,7 +35,7 @@ async def rider_ws(websocket: WebSocket, user_id: UUID) -> None:
 async def driver_ws(
     websocket: WebSocket,
     driver_id: UUID,
-    connection=Depends(get_db),
+    connection=Depends(get_db_ws),
 ) -> None:
     # Accept driver websocket connections using either the driver row UUID
     # or the associated user UUID for backward compatibility.
