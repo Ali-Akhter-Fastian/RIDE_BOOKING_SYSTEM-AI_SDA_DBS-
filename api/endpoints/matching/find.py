@@ -40,7 +40,13 @@ async def find_match(
             await ws_hub.emit_to_rider(
                 ride.rider_id,
                 "driver_matched",
-                {"ride_id": str(ride.id), "driver_id": str(ride.driver_id), "status": ride.status.value},
+                {
+                    "id": str(ride.id),
+                    "ride_id": str(ride.id),
+                    "driver_id": str(ride.driver_id),
+                    "status": ride.status.value,
+                    "fare": float(ride.fare) if ride.fare else None,
+                },
             )
             
             # Include rider's full name in driver offer payload to avoid extra fetches on the client
@@ -57,11 +63,18 @@ async def find_match(
                 ride.driver_id,
                 "ride_offer",
                 {
+                    "id": str(ride.id),
                     "ride_id": str(ride.id),
+                    "driver_id": str(ride.driver_id),
                     "rider_id": str(ride.rider_id),
                     "rider_full_name": rider_full_name,
+                    "status": ride.status.value,
                     "origin": ride.origin,
                     "destination": ride.destination,
+                    "fare": float(ride.fare) if ride.fare else None,
+                    "ride_type": ride.ride_type.value,
+                    "pickup_latitude": float(ride.pickup_latitude) if ride.pickup_latitude is not None else None,
+                    "pickup_longitude": float(ride.pickup_longitude) if ride.pickup_longitude is not None else None,
                 },
             )
         return RideDetailResponse.model_validate(ride)

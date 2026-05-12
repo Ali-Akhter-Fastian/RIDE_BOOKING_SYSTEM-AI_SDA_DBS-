@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from math import radians, sin, cos, asin, sqrt
 
 from models.ride import Ride
-from core.enums import RideStatus
+from core.enums import RideStatus, RideType
 from services.rides.ranking import (
     DriverRankingService,
     LocalRankingProvider,
@@ -224,6 +224,7 @@ class TestLocalRankingProvider:
             status=RideStatus.requested,
             origin="New Delhi",
             destination="Gurgaon",
+            ride_type=RideType.ridex,
             fare=None,
             rating=None,
             created_at=datetime.now(timezone.utc),
@@ -267,6 +268,7 @@ class TestLocalRankingProvider:
             status=RideStatus.requested,
             origin="New Delhi",
             destination="Gurgaon",
+            ride_type=RideType.ridex,
             fare=None,
             rating=None,
             created_at=datetime.now(timezone.utc),

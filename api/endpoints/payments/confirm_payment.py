@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
@@ -16,6 +17,7 @@ from services.payments.confirm import PaymentConfirmService
 from .dependencies import get_current_user_id, get_payment_confirm_service
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post(
@@ -47,6 +49,7 @@ async def confirm_payment(
         )
         return ConfirmPaymentResponse.model_validate(payment)
     except Exception as exc:
+        logger.exception("confirm_payment failed for payment_id=%s", payload.payment_id)
         raise_payment_http_exception(exc)
 
 
@@ -80,4 +83,5 @@ async def confirm_payment_legacy(
         )
         return ConfirmPaymentResponse.model_validate(payment)
     except Exception as exc:
+        logger.exception("confirm_payment_legacy failed for payment_id=%s", payment_id)
         raise_payment_http_exception(exc)

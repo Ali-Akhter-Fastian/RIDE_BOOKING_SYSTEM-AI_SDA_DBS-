@@ -22,7 +22,7 @@ class PaymentConfirmService(PaymentServiceBase):
         """Confirm a pending payment with an internal transaction identifier."""
         payment = await self.repository.get_payment_by_id(payment_id)
 
-        if payment.user_id != user_id:
+        if str(payment.user_id) != str(user_id):
             raise PaymentOwnershipError("You are not allowed to confirm this payment")
 
         if payment.status == PaymentStatus.completed:
@@ -40,7 +40,20 @@ class PaymentConfirmService(PaymentServiceBase):
         confirmed = await self.repository.update_payment_status(
             payment_id, PaymentStatus.completed.value
         )
+
+        if confirmed is None:
+            raise ValueError(f"Payment {payment_id} not found after status update")
+
         if hasattr(self.repository, "connection"):
+            # First mark the ride completed to ensure earnings calculation sees the final state
+            await self.repository.connection.execute(
+                """
+                UPDATE rides SET status = 'completed', updated_at = NOW()
+                WHERE id = $1
+                """,
+                str(confirmed.ride_id),
+            )
+            # Then update the driver's total earnings based on the ride
             await self.repository.connection.execute(
                 """
                 UPDATE drivers d
@@ -49,9 +62,8 @@ class PaymentConfirmService(PaymentServiceBase):
                 FROM rides r
                 WHERE r.id = $1
                   AND r.driver_id = d.id
-                  AND r.status = 'completed'
                 """,
-                confirmed.ride_id,
-                confirmed.amount,
+                str(confirmed.ride_id),
+                float(confirmed.amount),
             )
         return confirmed

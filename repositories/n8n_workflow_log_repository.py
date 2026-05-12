@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
@@ -49,8 +50,8 @@ class N8nWorkflowLogRepository:
             source,
             related_entity_type,
             related_entity_id,
-            request_payload,
-            response_payload,
+            json.dumps(request_payload) if request_payload else None,
+            json.dumps(response_payload) if response_payload else None,
             error_message,
             triggered_at,
             created_at,

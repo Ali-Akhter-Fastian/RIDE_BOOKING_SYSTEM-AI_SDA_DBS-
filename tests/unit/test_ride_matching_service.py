@@ -53,7 +53,7 @@ class FakeRideRepository:
     async def reset_driver_assignment(self, ride_id: UUID, driver_id: UUID) -> Ride:
         """Reset driver assignment and return ride to 'requested' status."""
         ride = self.rides.get(ride_id)
-        if ride is None or ride.status != RideStatus.accepted:
+        if ride is None or ride.status != RideStatus.offered:
             raise RideNotFound(f"Ride {ride_id} not found")
         if ride.driver_id != driver_id:
             raise RideOwnershipError("You are not the assigned driver for this ride")
@@ -85,7 +85,7 @@ class FakeRideRepository:
             id=ride.id,
             rider_id=ride.rider_id,
             driver_id=driver_id,
-            status=RideStatus.accepted,
+            status=RideStatus.offered,
             origin=ride.origin,
             destination=ride.destination,
             ride_type=ride.ride_type,
@@ -109,7 +109,7 @@ class FakeRideRepository:
             id=ride.id,
             rider_id=ride.rider_id,
             driver_id=driver_id,
-            status=RideStatus.accepted,
+            status=RideStatus.offered,
             origin=ride.origin,
             destination=ride.destination,
             ride_type=ride.ride_type,
@@ -127,7 +127,7 @@ class FakeRideRepository:
         self, ride_id: UUID, driver_id: UUID
     ) -> Ride:
         ride = self.rides.get(ride_id)
-        if ride is None or ride.status != RideStatus.accepted:
+        if ride is None or ride.status != RideStatus.offered:
             raise RideNotFound(f"Ride {ride_id} not found")
         if ride.driver_id != driver_id:
             raise RideOwnershipError("You are not the assigned driver for this ride")
@@ -153,7 +153,7 @@ class FakeRideRepository:
                 id=ride.id,
                 rider_id=ride.rider_id,
                 driver_id=self.replacement_driver_id,
-                status=RideStatus.accepted,
+                status=RideStatus.offered,
                 origin=ride.origin,
                 destination=ride.destination,
                 ride_type=ride.ride_type,
@@ -190,7 +190,7 @@ async def test_driver_reject_matched_ride_triggers_rematch_when_available(
 ) -> None:
     driver_id = uuid4()
     new_driver_id = uuid4()
-    ride = _ride(RideStatus.accepted, driver_id=driver_id)
+    ride = _ride(RideStatus.offered, driver_id=driver_id)
     repo.rides[ride.id] = ride
 
     # Create matching service and set up ranked drivers
@@ -219,7 +219,7 @@ async def test_driver_reject_matched_ride_triggers_rematch_when_available(
     ]
     
     # We need to add the new driver to the repo as well for assign_driver to work
-    new_ride_with_driver = _ride(RideStatus.accepted, driver_id=new_driver_id)
+    new_ride_with_driver = _ride(RideStatus.offered, driver_id=new_driver_id)
     new_ride_with_driver.id = ride.id
     
     result = await service.driver_reject_matched_ride(
@@ -239,7 +239,7 @@ async def test_driver_reject_matched_ride_returns_requested_when_no_driver_avail
     repo: FakeRideRepository, settings: Settings
 ) -> None:
     driver_id = uuid4()
-    ride = _ride(RideStatus.accepted, driver_id=driver_id)
+    ride = _ride(RideStatus.offered, driver_id=driver_id)
     repo.rides[ride.id] = ride
     repo.replacement_driver_id = None
 
@@ -255,7 +255,7 @@ async def test_driver_reject_matched_ride_returns_requested_when_no_driver_avail
 async def test_driver_reject_matched_ride_rejects_wrong_driver(
     repo: FakeRideRepository, settings: Settings
 ) -> None:
-    ride = _ride(RideStatus.accepted, driver_id=uuid4())
+    ride = _ride(RideStatus.offered, driver_id=uuid4())
     repo.rides[ride.id] = ride
 
     with pytest.raises(RideOwnershipError):

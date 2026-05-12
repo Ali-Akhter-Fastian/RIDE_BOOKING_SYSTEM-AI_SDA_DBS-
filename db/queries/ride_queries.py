@@ -68,7 +68,7 @@ SELECT_ACTIVE_RIDE_BY_DRIVER = f"""
 SELECT {RETURNING_FIELDS}
 FROM rides
 WHERE driver_id = $1
-  AND status IN ('offered', 'accepted', 'in_progress')
+  AND status IN ('requested', 'offered', 'accepted', 'in_progress')
 ORDER BY updated_at DESC
 LIMIT 1
 """

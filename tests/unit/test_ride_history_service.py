@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from app.config import Settings
-from core.enums import RideStatus, UserRole
+from core.enums import RideStatus, RideType, UserRole
 from models.ride import Ride
 from services.rides.history import RideHistoryService
 
@@ -25,6 +25,7 @@ def _ride(rider_id: UUID, driver_id: UUID | None = None) -> Ride:
         status=RideStatus.completed,
         origin="A",
         destination="B",
+        ride_type=RideType.ridex,
         fare=None,
         rating=None,
         created_at=now,

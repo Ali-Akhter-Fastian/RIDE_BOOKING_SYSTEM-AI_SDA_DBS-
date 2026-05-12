@@ -4,7 +4,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "c3f2a9b8d4e1"
-down_revision: Union[str, tuple[str, str], None] = "007_merge_006_heads"
+down_revision: Union[str, tuple[str, str], None] = "008_add_vehicle_columns"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -91,6 +91,7 @@ def upgrade() -> None:
         """
     )
 
+    op.execute("DROP TRIGGER IF EXISTS trg_log_n8n_workflow_from_rides ON rides;")
     op.execute(
         """
         CREATE TRIGGER trg_log_n8n_workflow_from_rides
@@ -154,6 +155,7 @@ def upgrade() -> None:
         """
     )
 
+    op.execute("DROP TRIGGER IF EXISTS trg_log_n8n_workflow_from_payments ON payments;")
     op.execute(
         """
         CREATE TRIGGER trg_log_n8n_workflow_from_payments
