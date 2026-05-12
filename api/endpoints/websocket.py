@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from uuid import UUID
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
@@ -17,8 +18,14 @@ async def rider_ws(websocket: WebSocket, user_id: UUID) -> None:
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
-        ws_hub.disconnect_rider(user_id, websocket)
+        pass
+    except asyncio.CancelledError:
+        # Task cancellations can happen during shutdown/reload.
+        # Swallow to avoid noisy ASGI tracebacks for expected disconnect paths.
+        pass
     except Exception:
+        pass
+    finally:
         ws_hub.disconnect_rider(user_id, websocket)
 
 
@@ -44,6 +51,12 @@ async def driver_ws(
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
-        ws_hub.disconnect_driver(actual_driver_id, websocket)
+        pass
+    except asyncio.CancelledError:
+        # Task cancellations can happen during shutdown/reload.
+        # Swallow to avoid noisy ASGI tracebacks for expected disconnect paths.
+        pass
     except Exception:
+        pass
+    finally:
         ws_hub.disconnect_driver(actual_driver_id, websocket)
