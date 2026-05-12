@@ -33,6 +33,8 @@ async def get_active_request(
         if driver_row is None:
             return {"ride": None}
 
+        actual_driver_id = UUID(str(driver_row["id"]))
+
         # Query using the canonical drivers.id value. The JWT subject may be users.id.
         ride = await RideRepository(connection).get_active_ride_by_driver(actual_driver_id)
         return {"ride": RideDetailResponse.model_validate(ride) if ride else None}
