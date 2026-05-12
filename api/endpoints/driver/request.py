@@ -33,7 +33,8 @@ async def get_active_request(
         if driver_row is None:
             return {"ride": None}
 
-        ride = await RideRepository(connection).get_active_ride_by_driver(driver_id)
+        resolved_driver_id = driver_row["id"]
+        ride = await RideRepository(connection).get_active_ride_by_driver(resolved_driver_id)
         return {"ride": RideDetailResponse.model_validate(ride) if ride else None}
     except Exception as exc:
         raise_ride_http_exception(exc)

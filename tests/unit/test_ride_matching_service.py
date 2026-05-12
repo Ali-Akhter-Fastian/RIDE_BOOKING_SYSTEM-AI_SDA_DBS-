@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from app.config import Settings
-from core.enums import RideStatus
+from core.enums import RideStatus, RideType
 from exception.ride_exceptions import (
     InvalidRideTransition,
     RideNotFound,
@@ -32,6 +32,7 @@ def _ride(
         status=status,
         origin="Downtown",
         destination="Airport",
+        ride_type=RideType.ridex,
         fare=None,
         rating=None,
         created_at=now,
@@ -64,6 +65,7 @@ class FakeRideRepository:
             status=RideStatus.requested,
             origin=ride.origin,
             destination=ride.destination,
+            ride_type=ride.ride_type,
             fare=ride.fare,
             rating=ride.rating,
             created_at=ride.created_at,
@@ -86,6 +88,7 @@ class FakeRideRepository:
             status=RideStatus.accepted,
             origin=ride.origin,
             destination=ride.destination,
+            ride_type=ride.ride_type,
             fare=ride.fare,
             rating=ride.rating,
             created_at=ride.created_at,
@@ -109,6 +112,7 @@ class FakeRideRepository:
             status=RideStatus.accepted,
             origin=ride.origin,
             destination=ride.destination,
+            ride_type=ride.ride_type,
             fare=ride.fare,
             rating=ride.rating,
             created_at=ride.created_at,
@@ -136,6 +140,7 @@ class FakeRideRepository:
                 status=RideStatus.requested,
                 origin=ride.origin,
                 destination=ride.destination,
+                ride_type=ride.ride_type,
                 fare=ride.fare,
                 rating=ride.rating,
                 created_at=ride.created_at,
@@ -151,6 +156,7 @@ class FakeRideRepository:
                 status=RideStatus.accepted,
                 origin=ride.origin,
                 destination=ride.destination,
+                ride_type=ride.ride_type,
                 fare=ride.fare,
                 rating=ride.rating,
                 created_at=ride.created_at,

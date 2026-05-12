@@ -14,7 +14,7 @@ from exception.ride_exceptions import raise_ride_http_exception
 from schemas.matching.find import MatchingFindRequest
 from schemas.rides.get import RideDetailResponse
 from services.rides.matching import RideMatchingService
-from repositories.rider_repository import RiderRepository
+from repositories.auth_repository import AuthRepository
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -45,9 +45,9 @@ async def find_match(
             
             # Include rider's full name in driver offer payload to avoid extra fetches on the client
             try:
-                rider_repo = RiderRepository(service.repository.connection)
-                rider = await rider_repo.get_by_id(ride.rider_id)
-                rider_full_name = rider.full_name if (rider is not None) else None
+                user_repo = AuthRepository(service.repository.connection)
+                rider_user = await user_repo.get_by_id(ride.rider_id)
+                rider_full_name = rider_user.full_name if (rider_user is not None) else None
                 logger.info(f"Rider full name fetched: {rider_full_name}")
             except Exception as rider_error:
                 logger.error(f"Failed to fetch rider full name: {rider_error}")
