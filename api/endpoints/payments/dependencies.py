@@ -12,6 +12,7 @@ from core.security import decode_access_token
 from exception.auth_exceptions import TokenError
 from exception.payment_exceptions import raise_payment_http_exception
 from repositories.payment_repository import PaymentRepository
+from services.integrations import N8NWebhookService
 from services.payments import (
     PaymentCreateService,
     PaymentConfirmService,
@@ -135,3 +136,9 @@ def get_payment_method_service(
     settings: Settings = Depends(get_settings),
 ) -> PaymentMethodService:
     return PaymentMethodService(PaymentRepository(connection), settings)
+
+
+def get_n8n_webhook_service(
+    settings: Settings = Depends(get_settings),
+) -> N8NWebhookService:
+    return N8NWebhookService(settings)

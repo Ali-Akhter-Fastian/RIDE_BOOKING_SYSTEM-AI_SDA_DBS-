@@ -15,6 +15,7 @@ class Settings:
     jwt_algorithm: str = "HS256"
     payment_webhook_secret: str = "dev-payment-webhook-secret"
     n8n_webhook_url: str | None = None
+    n8n_pricing_webhook_url: str | None = None
     n8n_webhook_secret: str | None = None
     n8n_webhook_timeout_sec: int = 5
     access_token_expire_minutes: int = 60
@@ -46,6 +47,7 @@ def get_settings() -> Settings:
         jwt_algorithm=os.getenv("JWT_ALGORITHM", "HS256"),
         payment_webhook_secret=os.getenv("PAYMENT_WEBHOOK_SECRET", "dev-payment-webhook-secret"),
         n8n_webhook_url=os.getenv("N8N_WEBHOOK_URL"),
+        n8n_pricing_webhook_url=os.getenv("N8N_PRICING_WEBHOOK_URL"),
         n8n_webhook_secret=os.getenv("N8N_WEBHOOK_SECRET"),
         n8n_webhook_timeout_sec=int(os.getenv("N8N_WEBHOOK_TIMEOUT_SEC", "5")),
         access_token_expire_minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")),

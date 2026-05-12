@@ -63,4 +63,5 @@ async def test_send_event_posts_to_n8n_webhook(monkeypatch) -> None:
     assert client.request_args[0] == "https://example.com/webhook"
     assert client.request_kwargs["json"]["event"] == "ride_accepted"
     assert client.request_kwargs["json"]["payload"]["ride_id"] == "1"
+    assert client.request_kwargs["json"]["ride_id"] == "1"
     assert client.request_kwargs["headers"]["X-N8N-Webhook-Secret"] == "secret"

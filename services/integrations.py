@@ -17,9 +17,11 @@ class N8NWebhookService:
         if not self.url:
             return
 
+        # Keep both envelope and flat payload keys for workflow compatibility.
         body = {
             "event": event_name,
             "payload": payload,
+            **payload,
         }
         headers = {
             "Content-Type": "application/json",

@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from uuid import UUID
 
-import httpx
 from fastapi import APIRouter, Depends, status
 
-from app.config import get_settings
 from core.ws import ws_hub
 from exception.payment_exceptions import raise_payment_http_exception
 from schemas.payments.confirm import (
@@ -13,33 +11,27 @@ from schemas.payments.confirm import (
     ConfirmPaymentRequest,
     ConfirmPaymentResponse,
 )
+from services.integrations import N8NWebhookService
 from services.payments.confirm import PaymentConfirmService
 
-from .dependencies import get_current_user_id, get_payment_confirm_service
+from .dependencies import (
+    get_current_user_id,
+    get_n8n_webhook_service,
+    get_payment_confirm_service,
+)
 
 router = APIRouter()
 
 
-async def _trigger_n8n_webhook(payment, webhook_url: str | None) -> None:
-    if not webhook_url:
-        return
-
-    try:
-        async with httpx.AsyncClient() as client:
-            await client.post(
-                webhook_url,
-                json={
-                    "ride_id": str(payment.ride_id),
-                    "payment_id": str(payment.id),
-                    "user_id": str(payment.user_id),
-                    "amount": float(payment.amount),
-                    "status": payment.status.value,
-                    "timestamp": payment.updated_at.isoformat(),
-                },
-                timeout=10.0,
-            )
-    except Exception as exc:
-        print(f"N8N webhook call failed: {exc}")
+def _build_payment_event_payload(payment) -> dict:
+    return {
+        "ride_id": str(payment.ride_id),
+        "payment_id": str(payment.id),
+        "user_id": str(payment.user_id),
+        "amount": float(payment.amount),
+        "status": payment.status.value,
+        "timestamp": payment.updated_at.isoformat(),
+    }
 
 
 @router.post(
@@ -52,6 +44,7 @@ async def confirm_payment(
     payload: ConfirmPaymentRequest,
     user_id: UUID = Depends(get_current_user_id),
     service: PaymentConfirmService = Depends(get_payment_confirm_service),
+    n8n_service: N8NWebhookService = Depends(get_n8n_webhook_service),
 ) -> ConfirmPaymentResponse:
     try:
         payment = await service.confirm_payment(
@@ -70,9 +63,9 @@ async def confirm_payment(
             },
         )
 
-        await _trigger_n8n_webhook(
-            payment,
-            get_settings().n8n_webhook_url,
+        await n8n_service.send_event(
+            "payment_completed",
+            _build_payment_event_payload(payment),
         )
 
         return ConfirmPaymentResponse.model_validate(payment)
@@ -91,6 +84,7 @@ async def confirm_payment_legacy(
     payload: ConfirmPaymentByPathRequest,
     user_id: UUID = Depends(get_current_user_id),
     service: PaymentConfirmService = Depends(get_payment_confirm_service),
+    n8n_service: N8NWebhookService = Depends(get_n8n_webhook_service),
 ) -> ConfirmPaymentResponse:
     try:
         payment = await service.confirm_payment(
@@ -109,9 +103,9 @@ async def confirm_payment_legacy(
             },
         )
 
-        await _trigger_n8n_webhook(
-            payment,
-            get_settings().n8n_webhook_url,
+        await n8n_service.send_event(
+            "payment_completed",
+            _build_payment_event_payload(payment),
         )
 
         return ConfirmPaymentResponse.model_validate(payment)
