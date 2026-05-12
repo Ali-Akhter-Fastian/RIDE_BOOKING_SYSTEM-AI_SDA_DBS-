@@ -15,8 +15,10 @@ router = APIRouter(tags=["websocket"])
 async def rider_ws(websocket: WebSocket, user_id: UUID) -> None:
     await ws_hub.connect_rider(user_id, websocket)
     try:
-        while True:
-            await websocket.receive_text()
+        async for _ in websocket.iter_text():
+            # We only keep the socket alive for server-push events.
+            # Incoming rider messages are currently ignored.
+            pass
     except WebSocketDisconnect:
         pass
     except asyncio.CancelledError:
@@ -48,8 +50,10 @@ async def driver_ws(
     actual_driver_id = UUID(str(row["id"]))
     await ws_hub.connect_driver(actual_driver_id, websocket)
     try:
-        while True:
-            await websocket.receive_text()
+        async for _ in websocket.iter_text():
+            # We only keep the socket alive for server-push events.
+            # Incoming driver messages are currently ignored.
+            pass
     except WebSocketDisconnect:
         pass
     except asyncio.CancelledError:

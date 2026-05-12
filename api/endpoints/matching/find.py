@@ -59,6 +59,7 @@ async def find_match(
                 {
                     "id": str(ride.id),
                     "ride_id": str(ride.id),
+                    "driver_id": str(ride.driver_id),
                     "rider_id": str(ride.rider_id),
                     "rider_full_name": rider_full_name,
                     "origin": ride.origin,
