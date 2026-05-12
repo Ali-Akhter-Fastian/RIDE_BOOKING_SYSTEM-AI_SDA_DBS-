@@ -11,6 +11,7 @@ from core.enums import UserRole
 from core.security import decode_access_token
 from exception.auth_exceptions import TokenError
 from exception.ride_exceptions import raise_ride_http_exception
+from repositories.n8n_workflow_log_repository import N8nWorkflowLogRepository
 from repositories.ride_repository import RideRepository
 from services.rides import (
     DriverRatingService,
@@ -19,6 +20,7 @@ from services.rides import (
     RideLifecycleService,
     RideMatchingService,
 )
+from services.rides.ranking import LocalRankingProvider, N8nRankingProvider, RankingProvider
 
 bearer_scheme = HTTPBearer(auto_error=True)
 
@@ -145,4 +147,23 @@ def get_ride_matching_service(
     connection=Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> RideMatchingService:
-    return RideMatchingService(RideRepository(connection), settings)
+    ranking_provider: RankingProvider
+    local_provider = LocalRankingProvider()
+
+    if settings.ranking_provider == "n8n" and settings.n8n_ranking_webhook_url:
+        fallback_provider = local_provider if settings.n8n_ranking_fallback_enabled else None
+        ranking_provider = N8nRankingProvider(
+            webhook_url=settings.n8n_ranking_webhook_url,
+            timeout_seconds=settings.n8n_ranking_timeout_seconds,
+            fallback_provider=fallback_provider,
+            auth_header=settings.n8n_ranking_auth_header,
+            workflow_log_repository=N8nWorkflowLogRepository(connection),
+        )
+    else:
+        ranking_provider = local_provider
+
+    return RideMatchingService(
+        RideRepository(connection),
+        settings,
+        ranking_provider=ranking_provider,
+    )

@@ -13,7 +13,8 @@ router = APIRouter()
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(
-    payload: RegisterRequest, # validates the request body against auth.py, if the payload(request body) is invalid, the request never reaches your service.
+    payload: RegisterRequest, # validates the request body against auth.py, 
+    # if the payload(request body) is invalid, the request never reaches your service.
     service: RegisterAuthService = Depends(get_register_auth_service),
 ) -> UserResponse:
     try:

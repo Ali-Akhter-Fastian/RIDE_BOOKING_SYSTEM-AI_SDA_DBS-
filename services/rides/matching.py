@@ -12,7 +12,7 @@ from exception.ride_exceptions import (
 )
 from models.ride import Ride
 from repositories.ride_repository import RideRepository
-from services.rides.ranking import LocalRankingProvider, RankedDriver
+from services.rides.ranking import LocalRankingProvider, RankedDriver, RankingProvider
 
 from .base import RideServiceBase
 
@@ -31,7 +31,7 @@ class RideMatchingService(RideServiceBase):
         self,
         repository: RideRepository,
         settings: Settings,
-        ranking_provider: LocalRankingProvider | None = None,
+        ranking_provider: RankingProvider | None = None,
     ):
         super().__init__(repository, settings)
         # Support dependency injection for ranking provider
