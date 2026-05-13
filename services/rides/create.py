@@ -28,7 +28,9 @@ class RideCreationService(RideServiceBase):
 
         now = datetime.now(timezone.utc)
         ride_type = payload.ride_type
-        fare = self.BASE_FARES[ride_type]
+        base_fare = self.BASE_FARES[ride_type]
+        requested_fare = payload.estimated_fare
+        fare = requested_fare if requested_fare is not None and requested_fare >= base_fare else base_fare
         ride = Ride(
             id=uuid4(),
             rider_id=rider_id,

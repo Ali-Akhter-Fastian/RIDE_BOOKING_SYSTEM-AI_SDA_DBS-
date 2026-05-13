@@ -15,6 +15,7 @@ class CreateRideRequest(BaseModel):
     ride_type: RideType = Field(default=RideType.ridex)
     pickup_latitude: float = Field(ge=-90, le=90)
     pickup_longitude: float = Field(ge=-180, le=180)
+    estimated_fare: Decimal | None = Field(default=None, gt=0, max_digits=10, decimal_places=2)
 
 
 class CreateRideResponse(BaseModel):
